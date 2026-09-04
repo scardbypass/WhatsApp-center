@@ -1,4 +1,4 @@
-WA Center v5 — polished mobile-first UI and realtime chat UX.
+WA Center v6 — polished mobile-first UI and realtime chat UX.
 
 # WA Center v3
 

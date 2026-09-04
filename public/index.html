@@ -74,7 +74,8 @@ button,input,textarea{font:inherit}button{border:0;color:inherit;cursor:pointer}
   const phoneJid = p => { const n=String(p||'').replace(/\D/g,''); return n ? n+'@s.whatsapp.net' : ''; };
   const phoneDisplay = p => { const n=String(p||''); return n || 'Nomor belum diisi'; };
   function toast(msg){ const el=$('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('show'),2400); }
-  function setLoading(el,on,label){ if(!el)return; if(on){ if(!el.dataset.oldText)el.dataset.oldText=el.textContent; el.disabled=true; el.innerHTML='<span class="loading"><i class="spinner"></i>'+esc(label||'Memproses…')+'</span>'; } else { el.disabled=false; if(el.dataset.oldText)el.textContent=el.dataset.oldText; delete el.dataset.oldText; } }
+  function uid(prefix='id'){ try{ if(globalThis.crypto && typeof globalThis.crypto.randomUUID==='function') return prefix+'_'+globalThis.crypto.randomUUID(); }catch{} return prefix+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10); }
+  function setLoading(el,on,label){ if(!el)return; if(on){ if(!el.dataset.oldHtml)el.dataset.oldHtml=el.innerHTML; el.disabled=true; el.setAttribute('aria-busy','true'); el.innerHTML='<span class="loading"><i class="spinner"></i>'+esc(label||'Memproses…')+'</span>'; } else { el.disabled=false; el.removeAttribute('aria-busy'); if(el.dataset.oldHtml!=null)el.innerHTML=el.dataset.oldHtml; delete el.dataset.oldHtml; } }
   function showScreen(id){ document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active')); $(id).classList.add('active'); document.documentElement.scrollTop=0; document.body.scrollTop=0; if(id==='conversationScreen')setTimeout(()=>{const b=$('messages');b.scrollTop=b.scrollHeight;},0); }
   function showModal(id){ $(id).classList.add('show'); }
   function hideModal(id){ $(id).classList.remove('show'); }
@@ -184,7 +185,7 @@ button,input,textarea{font:inherit}button{border:0;color:inherit;cursor:pointer}
   async function openChat(jid){
     const c=state.chats.find(x=>x.jid===jid); if(!c)return;
     state.currentChat=c; $('convName').textContent=c.name||jid.split('@')[0]; $('convNumber').textContent=jid.split('@')[0]; $('convAvatar').textContent=initials(c.name);
-    showScreen('conversationScreen'); renderMessages(true); setTimeout(()=>$('messageText').focus({preventScroll:true}),80);
+    showScreen('conversationScreen'); renderMessages(true); updateSendState();
   }
   function renderMessages(forceBottom=false){
     const box=$('messages'), msgs=state.currentChat?.messages||[]; if(!box)return;
@@ -198,7 +199,7 @@ button,input,textarea{font:inherit}button{border:0;color:inherit;cursor:pointer}
     if(forceBottom||wasNear)box.scrollTop=box.scrollHeight;
   }
   function appendOptimistic(text){
-    const id='local_'+crypto.randomUUID(); const message={id,remoteJid:state.currentChat.jid,fromMe:true,text,type:'conversation',timestamp:Date.now(),pending:true};
+    const id=uid('local'); const message={id,remoteJid:state.currentChat.jid,fromMe:true,text,type:'conversation',timestamp:Date.now(),pending:true};
     upsertChatMessage(message); setTimeout(()=>{const box=$('messages');box.scrollTop=box.scrollHeight;},0); return id;
   }
   function removeMessage(id){
@@ -208,13 +209,14 @@ button,input,textarea{font:inherit}button{border:0;color:inherit;cursor:pointer}
     const d=state.currentDevice,c=state.currentChat,ta=$('messageText'); const text=ta.value.trim();
     if(!d||!c||!text||state.sending)return;
     const btn=document.querySelector('[data-action="send-message"]'); state.sending=true; ta.value=''; autoResize(); setLoading(btn,true,'');
-    const optimisticId=appendOptimistic(text);
+    let optimisticId=null;
     try{
+      optimisticId=appendOptimistic(text);
       const r=await api(`/api/devices/${encodeURIComponent(d.id)}/send`,{method:'POST',body:JSON.stringify({jid:c.jid,text})});
       const chat=state.chats.find(x=>x.jid===c.jid); const idx=chat?.messages.findIndex(m=>m.id===optimisticId);
       if(chat&&idx>=0){chat.messages[idx]={...(r.message||chat.messages[idx]),id:r.message?.id||optimisticId,pending:false,fromMe:true,remoteJid:c.jid,text};state.currentChat=chat;renderMessages(true);}
     }catch(e){
-      removeMessage(optimisticId); renderChats(); renderMessages(false); ta.value=text; autoResize(); ta.focus({preventScroll:true}); toast(e.message);
+      if(optimisticId) removeMessage(optimisticId); renderChats(); renderMessages(false); ta.value=text; autoResize(); ta.focus({preventScroll:true}); toast(e.message);
     }finally{state.sending=false;setLoading(btn,false);updateSendState();}
   }
   function autoResize(){const ta=$('messageText');ta.style.height='auto';ta.style.height=Math.min(100,Math.max(42,ta.scrollHeight))+'px';}
@@ -260,12 +262,12 @@ button,input,textarea{font:inherit}button{border:0;color:inherit;cursor:pointer}
       if(a==='open-menu')openDrawer(); else if(a==='close-menu')closeDrawer(); else if(a==='add-device'){closeDrawer();openPair();} else if(a==='close-pair')hideModal('pairModal'); else if(a==='start-pair')await startPair(btn); else if(a==='refresh')await refresh(); else if(a==='storage')await openStorage(); else if(a==='close-storage')hideModal('storageModal'); else if(a==='select-files')selectFiles(); else if(a==='delete-files')await deleteFiles(); else if(a==='cleanup-media')await cleanupMedia(); else if(a==='toggle-theme')toggleTheme(); else if(a==='toggle-read'){state.read=!state.read;btn.classList.toggle('on',state.read);localStorage.setItem('waCenterRead',state.read?'1':'0');toast(state.read?'Read receipts UI aktif':'Read receipts UI nonaktif');} else if(a==='manage-devices'){closeDrawer();toast('Gunakan ⋮ pada device untuk mengelola');} else if(a==='home'){state.currentDevice=null;showScreen('homeScreen');await loadDevices(true);} else if(a==='device-menu')openDeviceMenu(id); else if(a==='close-device-menu')hideModal('deviceMenuModal'); else if(a==='open-device'){hideModal('deviceMenuModal');await openDevice(id || state.currentDevice?.id);} else if(a==='wake-device')await wakeCurrent(); else if(a==='sleep-device')await sleepCurrent(); else if(a==='edit-device')editCurrent(); else if(a==='delete-device')await deleteCurrent(); else if(a==='close-edit')hideModal('editModal'); else if(a==='save-edit')await saveEdit(); else if(a==='open-chat')await openChat(btn.dataset.jid); else if(a==='back-chats'){showScreen('deviceScreen');} else if(a==='send-message')await sendMessage(); else if(a==='save-token'){const input=$('tokenInput');if(!input.value.trim())return toast('Token wajib diisi');token=input.value.trim();localStorage.setItem('waCenterToken',token);hideModal('authModal');if(await validateToken()){connectWS();await Promise.all([loadDevices(true),loadStorage()]);toast('Berhasil terhubung');}} 
     }catch(err){toast(err.message||'Terjadi kesalahan');}
   });
-  $('drawerOverlay').addEventListener('click',closeDrawer); $('chatSearch').addEventListener('input',renderChats); $('messageText').addEventListener('input',()=>{autoResize();updateSendState();}); $('messageText').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}); function updateSendState(){const b=document.querySelector('[data-action="send-message"]');const ready=!!$('messageText').value.trim()&&!state.sending;b.classList.toggle('ready',ready);b.setAttribute('aria-disabled',ready?'false':'true');}
+  $('drawerOverlay').addEventListener('click',closeDrawer); $('chatSearch').addEventListener('input',renderChats); $('messageText').addEventListener('input',()=>{autoResize();updateSendState();}); $('messageText').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}); function updateSendState(){const b=document.querySelector('[data-action="send-message"]');const ready=!!$('messageText').value.trim()&&!state.sending; if(!b)return; b.classList.toggle('ready',ready);b.setAttribute('aria-disabled',ready?'false':'true');}
   window.addEventListener('online',()=>{$('offlineBar').classList.remove('show');if(token)connectWS();}); window.addEventListener('offline',()=>$('offlineBar').classList.add('show'));
   document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');}));
   if(localStorage.getItem('waCenterDark')==='1')document.body.classList.add('dark'); $('themeText').textContent=document.body.classList.contains('dark')?'Mode gelap aktif':'Mode terang aktif';
   state.read=localStorage.getItem('waCenterRead')!=='0'; $('readSwitch').classList.toggle('on',state.read); autoResize(); updateSendState();
-  if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js?v=5').catch(()=>{});
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js?v=6').catch(()=>{});
   validateToken().then(ok=>{if(ok){connectWS();loadDevices(true);loadStorage();}});
 })();
 </script>

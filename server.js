@@ -238,7 +238,7 @@ async function startDevice(id, options = {}) {
       const loggedOut = code === DisconnectReason.loggedOut;
       const wasOpen = runtime.state === "open";
       runtime.state = "closed";
-      logger.warn({ sid, code, error: lastDisconnect?.error?.message || null }, "WhatsApp connection closed");
+      logger.warn({ sid, code, error: lastDisconnect?.error?.message || null, stack: lastDisconnect?.error?.stack || null, statusCode: lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode || null }, "WhatsApp connection closed");
       if (!wasOpen) rejectReady(new Error(`WhatsApp menutup koneksi (${code || "unknown"})`));
       if (runtime.timer) clearTimeout(runtime.timer);
       sockets.delete(sid);
