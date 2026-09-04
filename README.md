@@ -1,35 +1,22 @@
-WA Center v6 — polished mobile-first UI and realtime chat UX.
+# WA Center v7
 
-# WA Center v3
+Multi-device WhatsApp control center using Baileys.
 
-Dashboard mobile-first untuk mengelola beberapa akun WhatsApp melalui Baileys.
+## v7
+- Auto-sleep configurable; default `0` (OFF) so 6–20 device can stay live.
+- Startup restores registered sessions gradually.
+- Connection starts are limited with `MAX_CONCURRENT_STARTS`.
+- Reconnect uses exponential backoff + jitter to avoid connection storms.
+- Live WhatsApp Web version is cached to reduce repeated lookups.
+- Message writes are serialized per device to avoid JSON file races.
+- Faster optimistic sending: multiple messages can be sent without waiting for the previous request.
+- Mobile-first UI refreshed with glass surfaces, tighter spacing, better touch targets, and cleaner chat layout.
 
-## Fitur
-- Multi-device dengan nama dan nomor custom.
-- Pairing Code custom 8 karakter atau QR Code.
-- Dynamic WhatsApp Web version lookup dengan fallback agar masalah 405/client-too-old lebih kecil.
-- Home dashboard, device screen, chat list, conversation dan kirim pesan teks.
-- Storage VPS manager; folder session WhatsApp tidak bisa dihapus dari UI.
-- Media upload sukses dihapus segera; file gagal dibersihkan otomatis sesuai `MEDIA_RETENTION_HOURS`.
-- WebSocket realtime dengan reconnect otomatis.
-- PWA, dark mode, responsive mobile/desktop.
-- Semua aksi UI memakai event delegation dan loading state agar tombol tidak terasa diam.
-
-## Jalankan
-```bash
-cp .env.example .env
-nano .env
-npm install
-npm start
+## Recommended 6–20 WA
+```env
+AUTO_SLEEP_MINUTES=0
+MAX_CONCURRENT_STARTS=3
+RECONNECT_BASE_MS=4000
+RECONNECT_MAX_MS=120000
+WA_VERSION_CACHE_MS=600000
 ```
-
-Untuk PM2:
-```bash
-pm2 start server.js --name wa-center
-pm2 save
-pm2 startup
-```
-
-Gunakan HTTPS/Cloudflare Tunnel untuk akses publik dan jangan membagikan `API_TOKEN`.
-
-> Penggunaan WhatsApp/Baileys harus untuk akun yang Anda berwenang gunakan dan mengikuti ketentuan WhatsApp.

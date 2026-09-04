@@ -27,7 +27,11 @@ const DEVICES_DIR = path.join(DATA_DIR, "devices");
 const MEDIA_DIR = path.join(DATA_DIR, "media-tmp");
 const MESSAGES_DIR = path.join(DATA_DIR, "messages");
 const MAX_UPLOAD_MB = Math.max(1, Number(process.env.MAX_UPLOAD_MB || 50));
-const AUTO_SLEEP_MINUTES = Math.max(0, Number(process.env.AUTO_SLEEP_MINUTES || 15));
+const AUTO_SLEEP_MINUTES = Math.max(0, Number(process.env.AUTO_SLEEP_MINUTES || 0));
+const MAX_CONCURRENT_STARTS = Math.max(1, Number(process.env.MAX_CONCURRENT_STARTS || 3));
+const RECONNECT_BASE_MS = Math.max(1500, Number(process.env.RECONNECT_BASE_MS || 4000));
+const RECONNECT_MAX_MS = Math.max(RECONNECT_BASE_MS, Number(process.env.RECONNECT_MAX_MS || 120000));
+const WA_VERSION_CACHE_MS = Math.max(60_000, Number(process.env.WA_VERSION_CACHE_MS || 10 * 60 * 1000));
 const MEDIA_RETENTION_HOURS = Math.max(1, Number(process.env.MEDIA_RETENTION_HOURS || 6));
 const API_TOKEN = process.env.API_TOKEN || "change-this";
 
@@ -37,6 +41,12 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: "/ws" });
 const sockets = new Map();
 const pairingLocks = new Set();
+const startLocks = new Map();
+let activeStartSlots = 0;
+const reconnectTimers = new Map();
+const reconnectAttempts = new Map();
+const messageQueues = new Map();
+let waVersionCache = { version: undefined, expiresAt: 0 };
 const upload = multer({
   dest: MEDIA_DIR,
   limits: { fileSize: MAX_UPLOAD_MB * 1024 * 1024 }
@@ -146,130 +156,175 @@ function scheduleSleep(id) {
   if (!runtime) return;
   if (runtime.timer) clearTimeout(runtime.timer);
   runtime.timer = setTimeout(() => {
-    sleepDevice(id, "auto-sleep").catch(err => logger.warn({ err, id }, "auto sleep failed"));
+    sleepDevice(id, "auto-sleep").catch(err => logger.warn({ err: err?.message, id }, "auto sleep failed"));
   }, AUTO_SLEEP_MINUTES * 60 * 1000);
 }
 
+function clearReconnect(id) {
+  const timer = reconnectTimers.get(id);
+  if (timer) clearTimeout(timer);
+  reconnectTimers.delete(id);
+}
+
+function queueReconnect(id, reason = "connection closed") {
+  const sid = safeId(id);
+  if (!sid || reconnectTimers.has(sid)) return;
+  const attempt = reconnectAttempts.get(sid) || 0;
+  const exp = Math.min(RECONNECT_MAX_MS, RECONNECT_BASE_MS * (2 ** Math.min(attempt, 6)));
+  const jitter = Math.round(exp * (0.15 + Math.random() * 0.2));
+  const delay = Math.min(RECONNECT_MAX_MS, exp + jitter);
+  reconnectAttempts.set(sid, attempt + 1);
+  logger.info({ sid, attempt: attempt + 1, delay, reason }, "Scheduling WhatsApp reconnect");
+  const timer = setTimeout(() => {
+    reconnectTimers.delete(sid);
+    startDevice(sid, { reconnect: true, reason: "auto-reconnect" }).catch(err => {
+      logger.warn({ sid, err: err?.message }, "Automatic reconnect failed");
+      queueReconnect(sid, "reconnect failed");
+    });
+  }, delay);
+  reconnectTimers.set(sid, timer);
+}
+
+async function withStartSlot(fn) {
+  while (activeStartSlots >= MAX_CONCURRENT_STARTS) await sleep(250);
+  activeStartSlots++;
+  try { return await fn(); } finally { activeStartSlots--; }
+}
+
 async function getWaVersion() {
+  if (waVersionCache.version && Date.now() < waVersionCache.expiresAt) return waVersionCache.version;
   try {
     const latest = await fetchLatestWaWebVersion();
     if (latest?.version) {
-      logger.info({ waWebVersion: latest.version, isLatest: latest.isLatest }, "Using live WhatsApp Web version");
+      waVersionCache = { version: latest.version, expiresAt: Date.now() + WA_VERSION_CACHE_MS };
+      logger.info({ waWebVersion: latest.version, isLatest: latest.isLatest }, "Using cached live WhatsApp Web version");
       return latest.version;
     }
   } catch (err) {
     logger.warn({ err: err?.message }, "Live WhatsApp Web version lookup failed; using Baileys default");
   }
-  return undefined;
+  return waVersionCache.version;
+}
+
+function persistMessages(id, additions) {
+  const sid = safeId(id);
+  const previous = messageQueues.get(sid) || Promise.resolve();
+  const next = previous.catch(() => {}).then(async () => {
+    const current = await readMessages(sid);
+    await saveMessages(sid, [...current, ...additions]);
+  });
+  messageQueues.set(sid, next.finally(() => { if (messageQueues.get(sid) === next) messageQueues.delete(sid); }));
+  return next;
 }
 
 async function startDevice(id, options = {}) {
   const sid = safeId(id);
   if (!sid) throw new Error("Invalid device id");
   const existing = sockets.get(sid);
-  if (existing?.sock && existing.state !== "closed") {
-    scheduleSleep(sid);
-    return existing;
-  }
+  if (existing?.sock && existing.state !== "closed") return existing;
+  if (startLocks.has(sid)) return startLocks.get(sid);
 
-  const meta = await ensureDevice(sid);
-  const authDir = authPath(sid);
-  await fs.mkdir(authDir, { recursive: true });
-  const { state, saveCreds } = await useMultiFileAuthState(authDir);
-  const version = await getWaVersion();
-  const sock = makeWASocket({
-    auth: state,
-    logger,
-    ...(version ? { version } : {}),
-    browser: Browsers.macOS("Desktop"),
-    markOnlineOnConnect: false,
-    syncFullHistory: false,
-    generateHighQualityLinkPreview: true
-  });
+  const job = withStartSlot(async () => {
+    const again = sockets.get(sid);
+    if (again?.sock && again.state !== "closed") return again;
+    const meta = await ensureDevice(sid);
+    const authDir = authPath(sid);
+    await fs.mkdir(authDir, { recursive: true });
+    const { state, saveCreds } = await useMultiFileAuthState(authDir);
+    const version = await getWaVersion();
+    const sock = makeWASocket({
+      auth: state,
+      logger,
+      ...(version ? { version } : {}),
+      browser: Browsers.macOS("Desktop"),
+      markOnlineOnConnect: false,
+      syncFullHistory: false,
+      generateHighQualityLinkPreview: true
+    });
 
-  let resolveReady;
-  let rejectReady;
-  const readyPromise = new Promise((resolve, reject) => { resolveReady = resolve; rejectReady = reject; });
-  const readyTimeout = setTimeout(() => rejectReady(new Error("WhatsApp belum siap. Coba tunggu beberapa detik lalu ulangi.")), 20000);
-  const runtime = {
-    sock,
-    authState: state,
-    timer: null,
-    state: "connecting",
-    pairingCode: null,
-    qr: null,
-    readyPromise,
-    createdAt: Date.now()
-  };
-  sockets.set(sid, runtime);
-  await updateDevice(sid, { status: "connecting", lastError: null });
-  sock.ev.on("creds.update", saveCreds);
+    let resolveReady;
+    let rejectReady;
+    const readyPromise = new Promise((resolve, reject) => { resolveReady = resolve; rejectReady = reject; });
+    const readyTimeout = setTimeout(() => rejectReady(new Error("WhatsApp belum siap. Coba tunggu beberapa detik lalu ulangi.")), 20000);
+    const runtime = {
+      sock,
+      authState: state,
+      timer: null,
+      state: "connecting",
+      pairingCode: null,
+      qr: null,
+      readyPromise,
+      createdAt: Date.now()
+    };
+    sockets.set(sid, runtime);
+    await updateDevice(sid, { status: "connecting", lastError: null });
+    sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", async update => {
-    const { connection, lastDisconnect, qr } = update;
-    if (connection === "connecting" || qr) {
-      setTimeout(() => resolveReady(), 1200);
-      runtime.state = "connecting";
-      await updateDevice(sid, { status: "connecting" });
-    }
-    if (qr) {
-      try {
-        runtime.qr = await QRCode.toDataURL(qr, { width: 360, margin: 2 });
-        broadcast({ type: "pairing.qr", deviceId: sid, qr: runtime.qr });
-      } catch (err) { logger.warn({ err, sid }, "QR generation failed"); }
-    }
-    if (connection === "open") {
-      clearTimeout(readyTimeout);
-      resolveReady();
-      runtime.state = "open";
-      runtime.qr = null;
-      await updateDevice(sid, {
-        status: "online",
-        lastSeenAt: new Date().toISOString(),
-        lastOpenedAt: new Date().toISOString(),
-        lastError: null
-      });
-      broadcast({ type: "device.open", deviceId: sid });
-      scheduleSleep(sid);
-    }
-    if (connection === "close") {
-      clearTimeout(readyTimeout);
-      const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode || null;
-      const loggedOut = code === DisconnectReason.loggedOut;
-      const wasOpen = runtime.state === "open";
-      runtime.state = "closed";
-      logger.warn({ sid, code, error: lastDisconnect?.error?.message || null, stack: lastDisconnect?.error?.stack || null, statusCode: lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode || null }, "WhatsApp connection closed");
-      if (!wasOpen) rejectReady(new Error(`WhatsApp menutup koneksi (${code || "unknown"})`));
-      if (runtime.timer) clearTimeout(runtime.timer);
-      sockets.delete(sid);
-      await updateDevice(sid, {
-        status: loggedOut ? "logged_out" : "offline",
-        lastError: code ? String(code) : "connection closed"
-      });
-      broadcast({ type: "device.close", deviceId: sid, loggedOut, code });
-      if (!loggedOut && options.reconnect !== false) {
-        setTimeout(() => startDevice(sid).catch(err => logger.warn({ err, sid }, "reconnect failed")), 3000);
+    sock.ev.on("connection.update", async update => {
+      const { connection, lastDisconnect, qr } = update;
+      if (connection === "connecting" || qr) {
+        setTimeout(() => resolveReady(), 1200);
+        runtime.state = "connecting";
+        await updateDevice(sid, { status: "connecting" });
       }
-    }
-  });
+      if (qr) {
+        try {
+          runtime.qr = await QRCode.toDataURL(qr, { width: 360, margin: 2 });
+          broadcast({ type: "pairing.qr", deviceId: sid, qr: runtime.qr });
+        } catch (err) { logger.warn({ err, sid }, "QR generation failed"); }
+      }
+      if (connection === "open") {
+        clearTimeout(readyTimeout);
+        resolveReady();
+        runtime.state = "open";
+        runtime.qr = null;
+        reconnectAttempts.delete(sid);
+        clearReconnect(sid);
+        await updateDevice(sid, {
+          status: "online",
+          lastSeenAt: new Date().toISOString(),
+          lastOpenedAt: new Date().toISOString(),
+          lastError: null
+        });
+        broadcast({ type: "device.open", deviceId: sid });
+        scheduleSleep(sid);
+      }
+      if (connection === "close") {
+        clearTimeout(readyTimeout);
+        const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode || null;
+        const loggedOut = code === DisconnectReason.loggedOut;
+        const wasOpen = runtime.state === "open";
+        runtime.state = "closed";
+        logger.warn({ sid, code, error: lastDisconnect?.error?.message || null, stack: lastDisconnect?.error?.stack || null, statusCode: lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode || null }, "WhatsApp connection closed");
+        if (!wasOpen) rejectReady(new Error(`WhatsApp menutup koneksi (${code || "unknown"})`));
+        if (runtime.timer) clearTimeout(runtime.timer);
+        sockets.delete(sid);
+        await updateDevice(sid, {
+          status: loggedOut ? "logged_out" : "offline",
+          lastError: code ? String(code) : "connection closed"
+        });
+        broadcast({ type: "device.close", deviceId: sid, loggedOut, code });
+        if (!loggedOut && options.reconnect !== false) queueReconnect(sid, `code ${code || "unknown"}`);
+      }
+    });
 
-  sock.ev.on("messages.upsert", async ({ messages }) => {
-    const normalized = messages.filter(m => m?.message).map(normalizeMessage);
-    if (!normalized.length) return;
-    const current = await readMessages(sid);
-    await saveMessages(sid, [...current, ...normalized]);
-    for (const message of normalized) broadcast({ type: "message", deviceId: sid, message });
-    scheduleSleep(sid);
+    sock.ev.on("messages.upsert", async ({ messages }) => {
+      const normalized = messages.filter(m => m?.message).map(normalizeMessage);
+      if (!normalized.length) return;
+      await persistMessages(sid, normalized);
+      for (const message of normalized) broadcast({ type: "message", deviceId: sid, message });
+    });
+    sock.ev.on("messages.update", updates => broadcast({ type: "messages.update", deviceId: sid, updates }));
+    sock.ev.on("messaging-history.set", async ({ messages }) => {
+      const normalized = messages.filter(m => m?.message).map(normalizeMessage);
+      if (!normalized.length) return;
+      await persistMessages(sid, normalized);
+      broadcast({ type: "history", deviceId: sid, count: normalized.length });
+    });
+    return runtime;
   });
-  sock.ev.on("messages.update", updates => broadcast({ type: "messages.update", deviceId: sid, updates }));
-  sock.ev.on("messaging-history.set", async ({ messages }) => {
-    const normalized = messages.filter(m => m?.message).map(normalizeMessage);
-    if (!normalized.length) return;
-    const current = await readMessages(sid);
-    await saveMessages(sid, [...current, ...normalized]);
-    broadcast({ type: "history", deviceId: sid, count: normalized.length });
-  });
-  return runtime;
+  startLocks.set(sid, job);
+  try { return await job; } finally { if (startLocks.get(sid) === job) startLocks.delete(sid); }
 }
 
 function normalizeMessage(m) {
@@ -433,10 +488,8 @@ app.post("/api/devices/:id/send", upload.single("file"), async (req, res) => {
       type: localType,
       timestamp: Number(sent?.messageTimestamp || 0) * 1000 || Date.now()
     };
-    const current = await readMessages(sid);
-    await saveMessages(sid, [...current, message]);
+    await persistMessages(sid, [message]);
     broadcast({ type: "message", deviceId: sid, message });
-    scheduleSleep(sid);
     res.json({ ok: true, messageId: message.id, message, tempDeleted: true });
   } catch (err) {
     if (tempPath) {
@@ -484,4 +537,24 @@ setInterval(async () => {
 
 wss.on("connection", ws => ws.send(JSON.stringify({ type: "hello", time: new Date().toISOString() })));
 app.get("/{*splat}", (req, res, next) => { if (req.path.startsWith("/api/")) return next(); res.sendFile(path.join(__dirname, "public", "index.html")); });
-server.listen(PORT, HOST, () => logger.info(`WA Center listening on http://${HOST}:${PORT}`));
+
+async function restoreRegisteredDevices() {
+  const devices = await listDeviceMeta();
+  const candidates = [];
+  for (const device of devices) {
+    if (device.status === "logged_out") continue;
+    const creds = await readJson(path.join(authPath(device.id), "creds.json"), null);
+    if (creds?.registered) candidates.push(device);
+    else await updateDevice(device.id, { status: "offline" });
+  }
+  logger.info({ count: candidates.length, maxConcurrentStarts: MAX_CONCURRENT_STARTS }, "Restoring registered WhatsApp devices");
+  for (const device of candidates) {
+    startDevice(device.id, { reconnect: true, autoRestore: true }).catch(err => logger.warn({ id: device.id, err: err?.message }, "Device restore failed"));
+    await sleep(900);
+  }
+}
+
+server.listen(PORT, HOST, () => {
+  logger.info({ port: PORT, maxConcurrentStarts: MAX_CONCURRENT_STARTS, reconnectBaseMs: RECONNECT_BASE_MS }, `WA Center v7 listening on http://${HOST}:${PORT}`);
+  restoreRegisteredDevices().catch(err => logger.error({ err }, "Device restore process failed"));
+});
