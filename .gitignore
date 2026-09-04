@@ -1,0 +1,6 @@
+node_modules/
+.env
+data/devices/*/auth/
+data/media-tmp/*
+data/messages/*
+*.log

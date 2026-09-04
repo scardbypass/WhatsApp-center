@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WA Center</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#5b4bff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#202033;background:#f5f6fb;--p:#5b4bff;--s:#fff;--m:#88899b;--l:#e7e7ef}
+*{box-sizing:border-box}body{margin:0;background:var(--bg)}body.dark{--s:#181920;--m:#999aaa;--l:#2b2c36;color:#f5f5fb;background:#101116}
+main{max-width:520px;margin:auto;min-height:100vh;background:var(--s)}
+header{padding:18px 16px;border-bottom:1px solid var(--l);display:flex;justify-content:space-between;align-items:center}
+h1{font-size:20px;margin:0}small{color:var(--m)}button{border:0;border-radius:12px;padding:10px 13px;cursor:pointer}button.primary{background:var(--p);color:white}
+section{padding:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{border:1px solid var(--l);border-radius:18px;padding:15px;background:var(--s);box-shadow:0 8px 24px #0000000b}.card h3{margin:0 0 5px;font-size:14px}.card p{margin:3px 0;color:var(--m);font-size:11px}.online{color:#20bd78}.offline{color:#ef5b6b}.actions{display:flex;gap:6px;margin-top:12px}.actions button{flex:1;background:#f0efff}.row{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--l)}input{width:100%;padding:12px;border:1px solid var(--l);border-radius:12px;background:transparent;color:inherit}.modal{position:fixed;inset:0;background:#0007;display:none;align-items:flex-end}.modal.show{display:flex}.box{background:var(--s);width:min(520px,100%);margin:auto;padding:20px;border-radius:22px 22px 0 0}.log{font:12px ui-monospace,monospace;white-space:pre-wrap;background:#111;color:#eee;padding:12px;border-radius:12px;max-height:220px;overflow:auto}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div><h1>WA Center</h1><small id="status">Loading…</small></div>
+  <button onclick="toggleDrawer()">⋮</button>
+</header>
+<section>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <b>WhatsApp</b><button class="primary" onclick="addDevice()">＋ Tambah</button>
+  </div>
+  <div class="grid" id="devices" style="margin-top:12px"></div>
+</section>
+<section>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <b>Storage VPS</b><button onclick="showStorage()">Kelola</button>
+  </div>
+  <div id="storage" style="margin-top:10px"></div>
+</section>
+<section id="installBox" style="display:none">
+  <button class="primary" style="width:100%" onclick="installPWA()">📲 Install WA Center</button>
+</section>
+<div id="offline" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;padding:12px 14px;border-radius:14px;background:#202033;color:white;text-align:center;font-size:13px">Offline — data realtime akan tersedia lagi saat koneksi kembali.</div>
+<section>
+  <b>Log realtime</b>
+  <div class="log" id="log" style="margin-top:10px"></div>
+</section>
+</main>
+
+<div class="modal" id="drawer">
+<div class="box">
+<h2>Menu</h2>
+<p><button onclick="openSettings()">⚙ Pengaturan</button></p>
+<p><button onclick="showStorage()">📁 Penyimpanan VPS</button></p>
+<p><button onclick="toggleTheme()">☾ Mode malam</button></p>
+<button onclick="toggleDrawer()">Tutup</button>
+</div>
+</div>
+
+<div class="modal" id="pair">
+<div class="box">
+<h2>Tambah WhatsApp</h2>
+<input id="name" placeholder="Nama device, contoh WA Toko">
+<input id="number" placeholder="62812..." style="margin-top:8px">
+<input id="custom" maxlength="8" autocomplete="off" placeholder="Custom pairing code • tepat 8 karakter (opsional)" style="margin-top:8px;text-transform:uppercase">
+<div style="display:flex;gap:8px;margin-top:12px">
+<button class="primary" onclick="createAndPair()">Pairing Code</button>
+<button onclick="createDeviceOnly()">QR / nanti</button>
+</div>
+<button onclick="closePair()">Batal</button>
+<div id="pairResult" style="margin-top:12px"></div>
+</div>
+</div>
+
+<script>
+const token = localStorage.getItem("waCenterToken") || prompt("Masukkan API_TOKEN VPS");
+if(token) localStorage.setItem("waCenterToken",token);
+
+async function api(url,opts={}){
+  opts.headers={...(opts.headers||{}),Authorization:"Bearer "+token};
+  const r=await fetch(url,opts);
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error||r.statusText);
+  return j;
+}
+function log(x){
+  const el=document.getElementById("log");
+  el.textContent=new Date().toLocaleTimeString()+" "+JSON.stringify(x)+"\n"+el.textContent;
+}
+async function load(){
+  try{
+    const ds=await api("/api/devices");
+    document.getElementById("status").textContent=ds.length+" device";
+    document.getElementById("devices").innerHTML=ds.map(d=>`
+      <div class="card">
+        <h3>${esc(d.name)}</h3>
+        <p>${esc(d.number||"-")}</p>
+        <p class="${d.status==="online"?"online":"offline"}">● ${esc(d.runtime||d.status)}</p>
+        <div class="actions">
+          <button onclick="wake('${escAttr(d.id)}')">Buka</button>
+          <button onclick="edit('${escAttr(d.id)}')">✎</button>
+          <button onclick="del('${escAttr(d.id)}')">🗑</button>
+        </div>
+      </div>`).join("");
+    const st=await api("/api/storage");
+    document.getElementById("storage").innerHTML=
+      `<small>${fmt(st.totalBytes)} total data WA Center</small><br>
+       <small>Session ${fmt(st.sessionBytes)} • Media ${fmt(st.mediaBytes)} • Messages ${fmt(st.messagesBytes)}</small>`;
+  }catch(e){log({error:e.message})}
+}
+async function wake(id){
+  try{const r=await api("/api/devices/"+id+"/wake",{method:"POST"});log(r);await load()}catch(e){alert(e.message)}
+}
+async function del(id){
+  if(!confirm("Hapus device dan session WhatsApp-nya?"))return;
+  try{await api("/api/devices/"+id,{method:"DELETE"});await load()}catch(e){alert(e.message)}
+}
+async function edit(id){
+  const name=prompt("Nama baru?");
+  if(!name)return;
+  try{await api("/api/devices/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});await load()}catch(e){alert(e.message)}
+}
+function addDevice(){document.getElementById("pair").classList.add("show")}
+function closePair(){document.getElementById("pair").classList.remove("show")}
+async function createDeviceOnly(){
+  try{
+    const name=document.getElementById("name").value.trim();
+    const number=document.getElementById("number").value.trim();
+    const d=await api("/api/devices",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,number})});
+    const r=await api("/api/devices/"+d.id+"/wake",{method:"POST"});
+    document.getElementById("pairResult").innerHTML = r.qr
+      ? `<b>QR siap</b><br><img src="${r.qr}" style="width:260px;max-width:100%;margin-top:10px;border-radius:16px;background:#fff;padding:10px">`
+      : `<pre>${esc(JSON.stringify(r,null,2))}</pre>`;
+    await load();
+  }catch(e){alert(e.message)}
+}
+async function createAndPair(){
+  try{
+    const name=document.getElementById("name").value.trim();
+    const number=document.getElementById("number").value.trim();
+    const custom=document.getElementById("custom").value.trim();
+    const d=await api("/api/devices",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,number})});
+    const r=await api("/api/devices/"+d.id+"/pairing-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone:number,customCode:custom||null})});
+    document.getElementById("pairResult").innerHTML = r.alreadyRegistered
+      ? "<b>Device sudah terdaftar.</b>"
+      : `<div style="font-size:28px;font-weight:800;letter-spacing:3px">${esc(r.code||"-")}</div><small>Masukkan kode ini di WhatsApp → Perangkat tertaut → Tautkan dengan nomor telepon.</small>`;
+    await load();
+  }catch(e){
+    document.getElementById("pairResult").innerHTML=`<div style="color:#ef5b6b;font-weight:700">Gagal: ${esc(e.message)}</div><small>Coba lagi setelah socket masuk status connecting. Jangan menekan pairing berkali-kali.</small>`;
+  }
+}
+function toggleDrawer(){document.getElementById("drawer").classList.toggle("show")}
+function openSettings(){toggleDrawer();alert("Settings API sudah tersedia; UI demo dapat dikembangkan dari endpoint ini.")}
+async function showStorage(){
+  toggleDrawer();
+  try{
+    const st=await api("/api/storage");
+    const rows=st.files.map(f=>`<div class="row"><input type="checkbox" class="filePick" value="${escAttr(f.path)}" style="width:auto"><div style="flex:1"><b>${esc(f.path)}</b><br><small>${fmt(f.bytes)}</small></div></div>`).join("");
+    document.getElementById("storage").innerHTML=`<div><small>${fmt(st.totalBytes)} total • Session ${fmt(st.sessionBytes)} • Media ${fmt(st.mediaBytes)} • Messages ${fmt(st.messagesBytes)}</small></div><div style="margin:10px 0"><button onclick="selectAllFiles(true)">Pilih semua</button> <button onclick="selectAllFiles(false)">Kosongkan</button> <button onclick="deleteSelectedFiles()">Hapus terpilih</button> <button onclick="cleanupMedia()">Bersihkan media</button></div>${rows || '<small>Tidak ada file.</small>'}`;
+  }catch(e){alert(e.message)}
+}
+function selectAllFiles(v){document.querySelectorAll('.filePick').forEach(x=>x.checked=v)}
+async function deleteSelectedFiles(){
+  const paths=[...document.querySelectorAll('.filePick:checked')].map(x=>x.value);
+  if(!paths.length)return alert('Pilih file dulu.');
+  if(!confirm(`Hapus ${paths.length} file? Session WhatsApp tetap dilindungi.`))return;
+  try{await api('/api/storage',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({paths})});showStorage()}catch(e){alert(e.message)}
+}
+async function cleanupMedia(){if(!confirm('Bersihkan semua media sementara?'))return;try{await api('/api/storage/cleanup-media',{method:'POST'});showStorage()}catch(e){alert(e.message)}}
+function toggleTheme(){document.body.classList.toggle("dark");localStorage.setItem("dark",document.body.classList.contains("dark"))}
+function fmt(n){n=Number(n)||0;if(n<1024)return n+" B";if(n<1024**2)return (n/1024).toFixed(1)+" KB";if(n<1024**3)return (n/1024**2).toFixed(1)+" MB";return (n/1024**3).toFixed(2)+" GB"}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
+function escAttr(s){return esc(s).replace(/"/g,"&quot;")}
+if(localStorage.getItem("dark")==="true")document.body.classList.add("dark");
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;document.getElementById('installBox').style.display='block'});
+async function installPWA(){if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;document.getElementById('installBox').style.display='none'}
+window.addEventListener('online',()=>document.getElementById('offline').style.display='none');
+window.addEventListener('offline',()=>document.getElementById('offline').style.display='block');
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(e=>log({sw:e.message}))}
+const wsProto=location.protocol==="https:"?"wss":"ws";
+const ws=new WebSocket(wsProto+"://"+location.host+"/ws");
+ws.onmessage=e=>{const x=JSON.parse(e.data);log(x);if(["device.update","device.open","device.close","device.sleep","device.deleted","message","history"].includes(x.type))load()};
+load();
+</script>
+</body>
+</html>
