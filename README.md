@@ -1,5 +1,3 @@
-Siap. Ini kode text README.md lengkapnya:
-
 # 💜 WA Center v8
 
 > **Multi-WhatsApp Control Center** — kelola banyak akun WhatsApp dari satu web app, dengan chat realtime, pairing QR / Pairing Code, penyimpanan media, dan UI mobile-first.
@@ -1084,4 +1082,4 @@ One dashboard. Multiple WhatsApp. Realtime.
 WA Center v8
 Multi WhatsApp Control Center
 
-Dibuat untuk deployment VPS, mobile-first usage, dan pengelolaan multi-device dengan arsitektur yang dapat dikembangkan.
+Dibuat untuk deployment VPS, mobile-first usage, dan pengelolaan multi-device dengan arsitektur yang dapat dikembangkan. By SCARD-PROJECT.id
