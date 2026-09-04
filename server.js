@@ -112,7 +112,16 @@ async function updateDevice(id, patch) {
   return next;
 }
 async function readMessages(id) { return readJson(messagesPath(id), []); }
-async function saveMessages(id, messages) { await writeJson(messagesPath(id), messages.slice(-500)); }
+async function saveMessages(id, messages) {
+  const seen = new Set();
+  const unique = [];
+  for (const m of messages) {
+    if (!m?.id || seen.has(m.id)) continue;
+    seen.add(m.id); unique.push(m);
+  }
+  unique.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+  await writeJson(messagesPath(id), unique.slice(-500));
+}
 function broadcast(payload) {
   const data = JSON.stringify(payload);
   for (const client of wss.clients) {
@@ -229,6 +238,7 @@ async function startDevice(id, options = {}) {
       const loggedOut = code === DisconnectReason.loggedOut;
       const wasOpen = runtime.state === "open";
       runtime.state = "closed";
+      logger.warn({ sid, code, error: lastDisconnect?.error?.message || null }, "WhatsApp connection closed");
       if (!wasOpen) rejectReady(new Error(`WhatsApp menutup koneksi (${code || "unknown"})`));
       if (runtime.timer) clearTimeout(runtime.timer);
       sockets.delete(sid);
@@ -390,27 +400,50 @@ app.get("/api/devices/:id/messages", async (req, res) => { try { res.json(await 
 app.post("/api/devices/:id/send", upload.single("file"), async (req, res) => {
   let tempPath = req.file?.path;
   try {
-    const runtime = await startDevice(req.params.id);
+    const sid = safeId(req.params.id);
+    const runtime = await startDevice(sid);
     if (runtime.state !== "open") throw new Error("WhatsApp device belum online");
     const jid = String(req.body.jid || "").trim();
     if (!jid) throw new Error("jid wajib diisi");
     let content;
+    let localText = "";
+    let localType = "conversation";
     if (req.file) {
       const mimetype = req.file.mimetype || "application/octet-stream";
       const buffer = await fs.readFile(req.file.path);
-      if (mimetype.startsWith("image/")) content = { image: buffer, mimetype, caption: req.body.caption || undefined };
-      else if (mimetype.startsWith("video/")) content = { video: buffer, mimetype, caption: req.body.caption || undefined };
-      else content = { document: buffer, mimetype, fileName: req.file.originalname || "file", caption: req.body.caption || undefined };
+      const caption = String(req.body.caption || "");
+      if (mimetype.startsWith("image/")) { content = { image: buffer, mimetype, caption: caption || undefined }; localType = "imageMessage"; }
+      else if (mimetype.startsWith("video/")) { content = { video: buffer, mimetype, caption: caption || undefined }; localType = "videoMessage"; }
+      else { content = { document: buffer, mimetype, fileName: req.file.originalname || "file", caption: caption || undefined }; localType = "documentMessage"; }
+      localText = caption || `[${localType.replace('Message','')}] ${req.file.originalname || 'file'}`;
     } else {
-      const text = String(req.body.text || "");
-      if (!text) throw new Error("text atau file wajib diisi");
-      content = { text };
+      localText = String(req.body.text || "");
+      if (!localText) throw new Error("text atau file wajib diisi");
+      content = { text: localText };
     }
     const sent = await runtime.sock.sendMessage(jid, content);
     if (tempPath) { await fs.rm(tempPath, { force: true }); tempPath = null; }
-    scheduleSleep(req.params.id);
-    res.json({ ok: true, messageId: sent?.key?.id || null, tempDeleted: true });
-  } catch (err) { apiError(res, 400, err.message); }
+    const message = {
+      id: sent?.key?.id || crypto.randomUUID(),
+      remoteJid: sent?.key?.remoteJid || jid,
+      fromMe: true,
+      participant: sent?.key?.participant || null,
+      pushName: "",
+      text: localText,
+      type: localType,
+      timestamp: Number(sent?.messageTimestamp || 0) * 1000 || Date.now()
+    };
+    const current = await readMessages(sid);
+    await saveMessages(sid, [...current, message]);
+    broadcast({ type: "message", deviceId: sid, message });
+    scheduleSleep(sid);
+    res.json({ ok: true, messageId: message.id, message, tempDeleted: true });
+  } catch (err) {
+    if (tempPath) {
+      try { await fs.rm(tempPath, { force: true }); } catch {}
+    }
+    apiError(res, 400, err.message);
+  }
 });
 app.get("/api/storage", async (_req, res) => {
   try {

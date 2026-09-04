@@ -1,3 +1,5 @@
+WA Center v5 — polished mobile-first UI and realtime chat UX.
+
 # WA Center v3
 
 Dashboard mobile-first untuk mengelola beberapa akun WhatsApp melalui Baileys.
