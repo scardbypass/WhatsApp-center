@@ -248,6 +248,7 @@ async function startDevice(id, options = {}) {
     const readyTimeout = setTimeout(() => rejectReady(new Error("WhatsApp belum siap. Coba tunggu beberapa detik lalu ulangi.")), 20000);
     const runtime = {
       sock,
+      intentionalClose: false,
       authState: state,
       timer: null,
       state: "connecting",
@@ -304,7 +305,7 @@ async function startDevice(id, options = {}) {
           lastError: code ? String(code) : "connection closed"
         });
         broadcast({ type: "device.close", deviceId: sid, loggedOut, code });
-        if (!loggedOut && options.reconnect !== false) queueReconnect(sid, `code ${code || "unknown"}`);
+        if (!loggedOut && options.reconnect !== false && !runtime.intentionalClose) queueReconnect(sid, `code ${code || "unknown"}`);
       }
     });
 
@@ -379,7 +380,9 @@ async function sleepDevice(id, reason = "manual") {
   const runtime = sockets.get(sid);
   if (!runtime) return { ok: true, slept: true, already: true };
   if (runtime.timer) clearTimeout(runtime.timer);
+  runtime.intentionalClose = true;
   sockets.delete(sid);
+  clearReconnect(sid);
   try { runtime.sock.end(undefined); } catch {}
   await updateDevice(sid, { status: "sleeping", lastSeenAt: new Date().toISOString() });
   broadcast({ type: "device.sleep", deviceId: sid, reason });
@@ -555,6 +558,21 @@ async function restoreRegisteredDevices() {
 }
 
 server.listen(PORT, HOST, () => {
-  logger.info({ port: PORT, maxConcurrentStarts: MAX_CONCURRENT_STARTS, reconnectBaseMs: RECONNECT_BASE_MS }, `WA Center v7 listening on http://${HOST}:${PORT}`);
+  logger.info({ port: PORT, maxConcurrentStarts: MAX_CONCURRENT_STARTS, reconnectBaseMs: RECONNECT_BASE_MS }, `WA Center v8 listening on http://${HOST}:${PORT}`);
   restoreRegisteredDevices().catch(err => logger.error({ err }, "Device restore process failed"));
 });
+
+
+async function shutdown(signal) {
+  logger.info({ signal, sockets: sockets.size }, "Shutting down WA Center");
+  for (const [sid, runtime] of sockets) {
+    runtime.intentionalClose = true;
+    try { runtime.sock.end(undefined); } catch {}
+    if (runtime.timer) clearTimeout(runtime.timer);
+    clearReconnect(sid);
+  }
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 5000).unref();
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
