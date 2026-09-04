@@ -2,186 +2,169 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>WA Center</title>
-<link rel="manifest" href="/manifest.webmanifest">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#5b4bff">
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>WA Center</title>
 <style>
-:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#202033;background:#f5f6fb;--p:#5b4bff;--s:#fff;--m:#88899b;--l:#e7e7ef}
-*{box-sizing:border-box}body{margin:0;background:var(--bg)}body.dark{--s:#181920;--m:#999aaa;--l:#2b2c36;color:#f5f5fb;background:#101116}
-main{max-width:520px;margin:auto;min-height:100vh;background:var(--s)}
-header{padding:18px 16px;border-bottom:1px solid var(--l);display:flex;justify-content:space-between;align-items:center}
-h1{font-size:20px;margin:0}small{color:var(--m)}button{border:0;border-radius:12px;padding:10px 13px;cursor:pointer}button.primary{background:var(--p);color:white}
-section{padding:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{border:1px solid var(--l);border-radius:18px;padding:15px;background:var(--s);box-shadow:0 8px 24px #0000000b}.card h3{margin:0 0 5px;font-size:14px}.card p{margin:3px 0;color:var(--m);font-size:11px}.online{color:#20bd78}.offline{color:#ef5b6b}.actions{display:flex;gap:6px;margin-top:12px}.actions button{flex:1;background:#f0efff}.row{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--l)}input{width:100%;padding:12px;border:1px solid var(--l);border-radius:12px;background:transparent;color:inherit}.modal{position:fixed;inset:0;background:#0007;display:none;align-items:flex-end}.modal.show{display:flex}.box{background:var(--s);width:min(520px,100%);margin:auto;padding:20px;border-radius:22px 22px 0 0}.log{font:12px ui-monospace,monospace;white-space:pre-wrap;background:#111;color:#eee;padding:12px;border-radius:12px;max-height:220px;overflow:auto}
+:root{--bg:#f5f7fb;--surface:#fff;--surface2:#f7f7fb;--text:#171725;--muted:#77788c;--line:#e8e8f0;--primary:#5b4bff;--primary2:#8a5cff;--green:#16b979;--red:#e95268;--amber:#e8a928;--shadow:0 18px 50px rgba(37,31,104,.11);--radius:24px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}body.dark{--bg:#0d0e13;--surface:#171821;--surface2:#20212c;--text:#f8f8fc;--muted:#9a9bab;--line:#2b2c38;--shadow:0 18px 50px rgba(0,0,0,.3)}button,input,textarea{font:inherit}button{border:0;color:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}button:active:not(:disabled){transform:scale(.975)}input,textarea{outline:0;color:var(--text);background:var(--surface2);border:1px solid var(--line)}
+.app{width:100%;max-width:520px;min-height:100dvh;margin:auto;background:var(--bg);position:relative;overflow:hidden}.screen{display:none;min-height:100dvh}.screen.active{display:block}.page{padding:0 16px 110px}.safe-top{padding-top:calc(10px + env(safe-area-inset-top))}
+.topbar{height:66px;padding:calc(8px + env(safe-area-inset-top)) 16px 8px;display:flex;align-items:center;gap:11px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}.brandmark{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,var(--primary),var(--primary2));color:#fff;font-weight:950;font-size:20px;box-shadow:0 8px 22px rgba(91,75,255,.25)}.top-title{font-size:16px;font-weight:850;line-height:1.1}.top-sub{font-size:10px;color:var(--muted);margin-top:2px}.top-spacer{flex:1}.iconbtn{width:40px;height:40px;border-radius:13px;background:var(--surface2);display:grid;place-items:center;font-size:19px}.iconbtn.primary{background:var(--primary);color:#fff}.back{font-size:27px;background:transparent;width:38px;height:40px}.hero{margin:18px 0;padding:22px;border-radius:28px;color:#fff;background:radial-gradient(circle at 90% 0%,rgba(255,255,255,.25),transparent 35%),linear-gradient(135deg,#4d3df2,#7d50ff);box-shadow:0 18px 45px rgba(91,75,255,.25);overflow:hidden;position:relative}.hero:after{content:"";position:absolute;width:170px;height:170px;border:1px solid rgba(255,255,255,.16);border-radius:50%;right:-65px;bottom:-75px}.eyebrow{font-size:10px;letter-spacing:.12em;font-weight:800;opacity:.75}.hero h1{font-size:25px;margin:7px 0 4px;letter-spacing:-.03em}.hero p{font-size:12px;opacity:.82;margin:0 0 18px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{padding:12px;border-radius:17px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px)}.stat b{font-size:20px;display:block}.stat span{font-size:9px;opacity:.72;font-weight:800;letter-spacing:.08em}.sectionhead{display:flex;align-items:center;justify-content:space-between;margin:21px 2px 11px}.sectionhead h2{font-size:14px;margin:0}.linkbtn{background:transparent;color:var(--primary);font-size:12px;font-weight:800;padding:8px}.device-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.device-card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:23px;padding:15px;min-height:174px;text-align:left;box-shadow:0 7px 24px rgba(30,30,70,.05);transition:.18s}.device-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}.device-head{display:flex;align-items:center;justify-content:space-between}.avatar{width:46px;height:46px;border-radius:16px;background:linear-gradient(145deg,#ece9ff,#f7f4ff);color:var(--primary);display:grid;place-items:center;font-weight:900;font-size:18px}.dark .avatar{background:#29263f}.statusdot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(22,185,121,.1)}.statusdot.offline{background:#9b9cab;box-shadow:none}.statusdot.connecting{background:var(--amber);box-shadow:0 0 0 4px rgba(232,169,40,.1)}.device-name{font-weight:850;font-size:14px;margin-top:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.device-number{font-size:10px;color:var(--muted);margin-top:4px}.device-status{font-size:10px;font-weight:750;margin-top:13px}.device-status.online{color:var(--green)}.device-status.connecting,.device-status.pairing{color:var(--amber)}.device-status.offline,.device-status.sleeping{color:var(--muted)}.card-menu{position:absolute;right:9px;top:9px;width:30px;height:30px;border-radius:10px;background:var(--surface2);font-size:18px}.add-card{border:1.5px dashed #c8c5df;background:transparent;display:grid;place-items:center;align-content:center;gap:7px;color:var(--primary);text-align:center}.add-card .plus{width:45px;height:45px;border-radius:15px;background:#eceaff;display:grid;place-items:center;font-size:25px}.dark .add-card .plus{background:#29263f}.add-card strong{font-size:12px}.storage-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:0 7px 24px rgba(30,30,70,.05)}.storage-line{display:flex;justify-content:space-between;align-items:center;font-size:11px}.storage-value{font-weight:850;font-size:18px}.progress{height:7px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:12px 0}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--primary2));border-radius:99px}.mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.mini-stat{background:var(--surface2);border-radius:14px;padding:10px}.mini-stat b{display:block;font-size:11px}.mini-stat span{font-size:8px;color:var(--muted)}
+.bottom{position:fixed;z-index:40;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);padding:9px 14px calc(9px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(20px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.nav{height:50px;border-radius:16px;background:transparent;color:var(--muted);font-size:10px;font-weight:750;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}.nav b{font-size:19px}.nav.active{background:var(--surface2);color:var(--primary)}
+.overlay{position:fixed;inset:0;background:rgba(13,14,25,.48);backdrop-filter:blur(4px);z-index:80;opacity:0;visibility:hidden;transition:.2s}.overlay.show{opacity:1;visibility:visible}.sheet{position:fixed;z-index:81;left:50%;bottom:0;width:min(520px,100%);transform:translate(-50%,105%);background:var(--surface);border-radius:28px 28px 0 0;padding:17px 16px calc(17px + env(safe-area-inset-bottom));max-height:88dvh;overflow:auto;transition:.25s cubic-bezier(.2,.8,.2,1);box-shadow:0 -20px 60px rgba(0,0,0,.18)}.sheet.show{transform:translate(-50%,0)}.grab{width:40px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 15px}.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.sheet-title{font-size:18px;font-weight:900}.sheet-sub{font-size:10px;color:var(--muted);margin-top:2px}.closebtn{width:38px;height:38px;border-radius:12px;background:var(--surface2);font-size:19px}.menu-list{background:var(--surface2);border-radius:20px;overflow:hidden}.menu-item{width:100%;padding:14px;display:flex;align-items:center;gap:12px;background:transparent;text-align:left;border-bottom:1px solid var(--line)}.menu-item:last-child{border:0}.menu-ico{width:38px;height:38px;border-radius:12px;background:var(--surface);display:grid;place-items:center}.menu-info{flex:1}.menu-info b{font-size:12px}.menu-info span{display:block;font-size:9px;color:var(--muted);margin-top:3px}.arrow{font-size:20px;color:var(--muted)}
+.modal{position:fixed;inset:0;z-index:90;display:none;align-items:flex-end;background:rgba(13,14,25,.48);backdrop-filter:blur(4px)}.modal.show{display:flex}.modalbox{width:min(520px,100%);max-height:90dvh;overflow:auto;background:var(--surface);border-radius:28px 28px 0 0;padding:19px 16px calc(19px + env(safe-area-inset-bottom));animation:up .22s ease}@keyframes up{from{transform:translateY(20px);opacity:.5}to{transform:none;opacity:1}}.modal-title{font-size:19px;font-weight:900}.modal-desc{font-size:10px;color:var(--muted);line-height:1.5}.field{width:100%;height:48px;border-radius:14px;padding:0 14px;margin-top:9px}.field:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(91,75,255,.1)}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.btn{min-height:46px;border-radius:14px;padding:0 15px;font-weight:800;font-size:12px;background:var(--surface2)}.btn.primary{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff}.btn.danger{color:var(--red);background:rgba(233,82,104,.09)}.btn.full{width:100%;margin-top:9px}.method{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}.method button{padding:14px 9px;border-radius:16px;background:var(--surface2);border:1px solid var(--line);font-size:11px}.method button.active{border-color:var(--primary);color:var(--primary);background:rgba(91,75,255,.08)}.pair-result{margin-top:13px;padding:14px;border-radius:18px;background:var(--surface2);text-align:center;min-height:70px}.pair-code{font-size:27px;font-weight:950;letter-spacing:4px;color:var(--primary);margin:5px 0}.qr{width:260px;max-width:100%;background:#fff;padding:10px;border-radius:18px}.hint{font-size:9px;color:var(--muted);line-height:1.5}.danger-text{color:var(--red)}
+.drawer-card{background:var(--surface2);border:1px solid var(--line);border-radius:19px;padding:14px;margin-bottom:10px}.drawer-row{display:flex;justify-content:space-between;align-items:center;gap:12px}.drawer-row b{font-size:12px}.drawer-row small{font-size:9px;color:var(--muted);display:block;margin-top:3px}.switch{width:46px;height:27px;border-radius:99px;background:#b9bac5;padding:3px;transition:.2s}.switch i{display:block;width:21px;height:21px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 2px 5px #0002}.switch.on{background:var(--primary)}.switch.on i{transform:translateX(19px)}
+.chat-page{height:100dvh;display:flex;flex-direction:column}.chatbar{flex:none}.chat-search{margin:9px 12px;height:40px;border-radius:14px;padding:0 13px;width:calc(100% - 24px);font-size:11px}.chat-list{flex:1;overflow:auto;padding:2px 8px 100px}.chat-row{display:flex;gap:11px;align-items:center;padding:12px 9px;border-radius:17px}.chat-row:active{background:var(--surface2)}.chat-avatar{width:48px;height:48px;border-radius:16px;background:var(--surface2);display:grid;place-items:center;font-weight:900;color:var(--primary);flex:none}.chat-main{min-width:0;flex:1}.chat-top{display:flex;justify-content:space-between;gap:8px}.chat-name{font-size:13px;font-weight:850}.chat-time{font-size:9px;color:var(--muted)}.chat-preview{font-size:10px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.empty{text-align:center;color:var(--muted);padding:45px 20px;font-size:11px}.conversation{height:100dvh;display:flex;flex-direction:column;background:var(--bg)}.messages{flex:1;overflow:auto;padding:12px 12px 10px}.bubble{max-width:80%;padding:9px 11px;border-radius:15px;margin:4px 0;font-size:11px;line-height:1.4;word-break:break-word}.bubble.in{background:var(--surface);border:1px solid var(--line);border-top-left-radius:5px}.bubble.out{background:#ddd8ff;color:#201d38;margin-left:auto;border-top-right-radius:5px}.dark .bubble.out{background:#38305f;color:#fff}.bubble small{display:block;font-size:8px;opacity:.55;text-align:right;margin-top:3px}.composer{display:flex;gap:7px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line)}.composer textarea{flex:1;min-height:42px;max-height:100px;border-radius:14px;padding:11px 12px;font-size:11px;resize:none}.sendbtn{width:44px;height:44px;border-radius:14px;background:var(--primary);color:#fff;font-size:18px}
+.storage-list{margin-top:12px;border:1px solid var(--line);border-radius:18px;overflow:hidden}.file-row{display:flex;align-items:center;gap:9px;padding:11px;border-bottom:1px solid var(--line)}.file-row:last-child{border:0}.file-row input{width:18px;height:18px}.file-info{min-width:0;flex:1}.file-info b{font-size:9px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.file-info span{font-size:8px;color:var(--muted)}
+.toast{position:fixed;z-index:200;left:50%;bottom:82px;transform:translate(-50%,16px);opacity:0;pointer-events:none;background:#1d1e27;color:#fff;border-radius:13px;padding:10px 14px;font-size:10px;transition:.2s;max-width:90vw;text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}.loading{display:inline-flex;align-items:center;gap:7px}.spinner{width:15px;height:15px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.offlinebar{position:fixed;z-index:190;top:0;left:50%;transform:translateX(-50%);width:min(520px,100%);padding:7px;text-align:center;background:var(--red);color:#fff;font-size:9px;display:none}.offlinebar.show{display:block}
+@media(min-width:700px){body{padding:24px 0}.app{border-radius:30px;box-shadow:0 25px 80px rgba(20,20,60,.13);min-height:calc(100dvh - 48px)}.screen,.chat-page,.conversation{min-height:calc(100dvh - 48px);height:calc(100dvh - 48px)}.bottom{border-radius:0 0 30px 30px}.sheet{bottom:24px;border-radius:28px}.modalbox{border-radius:28px;margin-bottom:24px}}
 </style>
 </head>
 <body>
-<main>
-<header>
-  <div><h1>WA Center</h1><small id="status">Loading…</small></div>
-  <button onclick="toggleDrawer()">⋮</button>
-</header>
-<section>
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <b>WhatsApp</b><button class="primary" onclick="addDevice()">＋ Tambah</button>
-  </div>
-  <div class="grid" id="devices" style="margin-top:12px"></div>
-</section>
-<section>
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <b>Storage VPS</b><button onclick="showStorage()">Kelola</button>
-  </div>
-  <div id="storage" style="margin-top:10px"></div>
-</section>
-<section id="installBox" style="display:none">
-  <button class="primary" style="width:100%" onclick="installPWA()">📲 Install WA Center</button>
-</section>
-<div id="offline" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;padding:12px 14px;border-radius:14px;background:#202033;color:white;text-align:center;font-size:13px">Offline — data realtime akan tersedia lagi saat koneksi kembali.</div>
-<section>
-  <b>Log realtime</b>
-  <div class="log" id="log" style="margin-top:10px"></div>
-</section>
-</main>
+<div class="offlinebar" id="offlineBar">Koneksi internet terputus</div>
+<div class="app">
+  <section class="screen active" id="homeScreen">
+    <header class="topbar safe-top">
+      <div class="brandmark">W</div><div><div class="top-title">WA Center</div><div class="top-sub" id="systemStatus">Menghubungkan…</div></div><div class="top-spacer"></div>
+      <button class="iconbtn" data-action="refresh" aria-label="Refresh">↻</button><button class="iconbtn" data-action="open-menu" aria-label="Menu">⋮</button>
+    </header>
+    <main class="page">
+      <div class="hero"><div class="eyebrow">CONTROL CENTER</div><h1>Semua WhatsApp, satu tempat.</h1><p>Kelola device, pairing, chat dan penyimpanan dari satu dashboard.</p><div class="stats"><div class="stat"><b id="countDevices">0</b><span>DEVICE</span></div><div class="stat"><b id="countOnline">0</b><span>ONLINE</span></div><div class="stat"><b id="countUnread">—</b><span>REALTIME</span></div></div></div>
+      <div class="sectionhead"><h2>WhatsApp Kamu</h2><button class="linkbtn" data-action="add-device">＋ Tambah</button></div>
+      <div class="device-grid" id="deviceGrid"></div>
+      <div class="sectionhead"><h2>Penyimpanan VPS</h2><button class="linkbtn" data-action="storage">Kelola</button></div>
+      <div class="storage-card"><div class="storage-line"><div><div class="storage-value" id="storageTotal">0 B</div><span style="color:var(--muted);font-size:9px">data WA Center</span></div><button class="btn" data-action="storage">Buka</button></div><div class="progress"><i id="storageProgress"></i></div><div class="mini-grid"><div class="mini-stat"><b id="storageSession">0 B</b><span>SESSION</span></div><div class="mini-stat"><b id="storageMedia">0 B</b><span>MEDIA</span></div><div class="mini-stat"><b id="storageMessages">0 B</b><span>MESSAGE</span></div></div></div>
+    </main>
+    <nav class="bottom"><button class="nav active"><b>⌂</b>Home</button><button class="nav" data-action="add-device"><b>＋</b>Device</button><button class="nav" data-action="open-menu"><b>⋮</b>Menu</button></nav>
+  </section>
 
-<div class="modal" id="drawer">
-<div class="box">
-<h2>Menu</h2>
-<p><button onclick="openSettings()">⚙ Pengaturan</button></p>
-<p><button onclick="showStorage()">📁 Penyimpanan VPS</button></p>
-<p><button onclick="toggleTheme()">☾ Mode malam</button></p>
-<button onclick="toggleDrawer()">Tutup</button>
-</div>
+  <section class="screen" id="deviceScreen">
+    <header class="topbar safe-top"><button class="back" data-action="home">‹</button><div class="brandmark" id="deviceAvatar">W</div><div><div class="top-title" id="deviceTitle">WhatsApp</div><div class="top-sub" id="deviceStatus">Offline</div></div><div class="top-spacer"></div><button class="iconbtn" data-action="device-menu">⋮</button></header>
+    <main class="page"><div class="sectionhead"><h2>Chat</h2><span class="modal-desc" id="chatCount"></span></div><input class="chat-search" id="chatSearch" placeholder="Cari chat…" autocomplete="off"><div class="chat-list" id="chatList"></div></main>
+  </section>
+
+  <section class="screen" id="conversationScreen"><div class="conversation"><header class="topbar safe-top"><button class="back" data-action="back-chats">‹</button><div class="chat-avatar" id="convAvatar" style="width:40px;height:40px;border-radius:13px">A</div><div><div class="top-title" id="convName">Chat</div><div class="top-sub" id="convNumber"></div></div><div class="top-spacer"></div></header><div class="messages" id="messages"></div><div class="composer"><textarea id="messageText" rows="1" placeholder="Ketik pesan…"></textarea><button class="sendbtn" data-action="send-message">➤</button></div></div></section>
 </div>
 
-<div class="modal" id="pair">
-<div class="box">
-<h2>Tambah WhatsApp</h2>
-<input id="name" placeholder="Nama device, contoh WA Toko">
-<input id="number" placeholder="62812..." style="margin-top:8px">
-<input id="custom" maxlength="8" autocomplete="off" placeholder="Custom pairing code • tepat 8 karakter (opsional)" style="margin-top:8px;text-transform:uppercase">
-<div style="display:flex;gap:8px;margin-top:12px">
-<button class="primary" onclick="createAndPair()">Pairing Code</button>
-<button onclick="createDeviceOnly()">QR / nanti</button>
-</div>
-<button onclick="closePair()">Batal</button>
-<div id="pairResult" style="margin-top:12px"></div>
-</div>
-</div>
+<div class="overlay" id="drawerOverlay"></div><aside class="sheet" id="drawer"><div class="grab"></div><div class="sheet-head"><div><div class="sheet-title">Pengaturan</div><div class="sheet-sub">WA Center Control Panel</div></div><button class="closebtn" data-action="close-menu">×</button></div><div class="menu-list"><button class="menu-item" data-action="add-device"><div class="menu-ico">＋</div><div class="menu-info"><b>Tambah WhatsApp</b><span>Pairing Code atau QR Code</span></div><div class="arrow">›</div></button><button class="menu-item" data-action="manage-devices"><div class="menu-ico">▣</div><div class="menu-info"><b>Kelola Device</b><span>Nama, nomor dan urutan device</span></div><div class="arrow">›</div></button><button class="menu-item" data-action="storage"><div class="menu-ico">▤</div><div class="menu-info"><b>Penyimpanan VPS</b><span>Lihat dan bersihkan file sementara</span></div><div class="arrow">›</div></button><button class="menu-item" data-action="toggle-theme"><div class="menu-ico">☾</div><div class="menu-info"><b>Mode Tampilan</b><span id="themeText">Otomatis / terang / gelap</span></div><div class="arrow">›</div></button></div><div class="drawer-card" style="margin-top:10px"><div class="drawer-row"><div><b>Read receipts</b><small>Pengaturan tampilan saja. Perilaku centang tetap mengikuti WhatsApp/Baileys.</small></div><button class="switch on" id="readSwitch" data-action="toggle-read"><i></i></button></div></div><div class="drawer-card"><div class="drawer-row"><div><b>API connection</b><small id="apiState">Memeriksa koneksi…</small></div><span id="apiDot" class="statusdot connecting"></span></div></div></aside>
 
+<div class="modal" id="pairModal"><div class="modalbox"><div class="sheet-head"><div><div class="modal-title">Tambah WhatsApp</div><div class="modal-desc">Buat device lalu hubungkan akun WhatsApp.</div></div><button class="closebtn" data-action="close-pair">×</button></div><div class="method"><button class="active" data-method="pair">🔢<br><b>Pairing Code</b><br><small>Nomor HP</small></button><button data-method="qr">▦<br><b>QR Code</b><br><small>Scan dari HP</small></button></div><input id="newName" class="field" placeholder="Nama device, contoh: WA Toko"><input id="newNumber" class="field" placeholder="62812xxxxxxx" inputmode="tel"><input id="customCode" class="field" maxlength="8" autocomplete="off" placeholder="Custom code (opsional, 8 karakter)" style="text-transform:uppercase"><div id="pairResult" class="pair-result"><span class="modal-desc">Belum ada kode.</span></div><button class="btn primary full" id="pairStart" data-action="start-pair">Hubungkan Device</button><button class="btn full" data-action="close-pair">Batal</button><div class="hint" style="margin-top:10px">Untuk pairing code, buka WhatsApp → Perangkat tertaut → Tautkan perangkat → Tautkan dengan nomor telepon. Jangan meminta kode berulang kali.</div></div></div>
+
+<div class="modal" id="editModal"><div class="modalbox"><div class="sheet-head"><div><div class="modal-title">Edit Device</div><div class="modal-desc">Ubah nama dan nomor yang ditampilkan.</div></div><button class="closebtn" data-action="close-edit">×</button></div><input id="editName" class="field" placeholder="Nama device"><input id="editNumber" class="field" placeholder="Nomor WhatsApp"><div class="actions"><button class="btn" data-action="close-edit">Batal</button><button class="btn primary" data-action="save-edit">Simpan</button></div></div></div>
+
+<div class="modal" id="deviceMenuModal"><div class="modalbox"><div class="sheet-head"><div><div class="modal-title" id="menuDeviceName">Device</div><div class="modal-desc">Aksi device</div></div><button class="closebtn" data-action="close-device-menu">×</button></div><div class="actions"><button class="btn primary" data-action="open-device">Buka Chat</button><button class="btn" data-action="wake-device">Wake / Reconnect</button><button class="btn" data-action="sleep-device">Sleep</button><button class="btn" data-action="edit-device">✎ Edit</button></div><button class="btn danger full" data-action="delete-device">Hapus Device + Session</button></div></div>
+
+<div class="modal" id="storageModal"><div class="modalbox"><div class="sheet-head"><div><div class="modal-title">Penyimpanan VPS</div><div class="modal-desc">Session WhatsApp selalu dilindungi.</div></div><button class="closebtn" data-action="close-storage">×</button></div><div class="storage-card"><div class="storage-line"><b id="storageModalTotal">0 B</b><span class="modal-desc" id="storageModalCount">0 file</span></div><div class="progress"><i id="storageModalProgress"></i></div><div class="mini-grid"><div class="mini-stat"><b id="modalSession">0 B</b><span>SESSION</span></div><div class="mini-stat"><b id="modalMedia">0 B</b><span>MEDIA</span></div><div class="mini-stat"><b id="modalMessages">0 B</b><span>MESSAGES</span></div></div></div><div class="actions"><button class="btn" data-action="select-files">Pilih Semua</button><button class="btn danger" data-action="delete-files">Hapus Terpilih</button></div><button class="btn full" data-action="cleanup-media">Bersihkan Media Sementara</button><div class="storage-list" id="fileList"></div></div></div>
+
+<div class="modal" id="authModal"><div class="modalbox"><div class="modal-title">Hubungkan WA Center</div><div class="modal-desc" style="margin-top:4px">Masukkan API_TOKEN yang ada di .env VPS. Token hanya disimpan di browser ini.</div><input id="tokenInput" class="field" type="password" autocomplete="off" placeholder="API_TOKEN"><button class="btn primary full" data-action="save-token">Masuk</button></div></div>
+<div class="toast" id="toast"></div>
 <script>
-const token = localStorage.getItem("waCenterToken") || prompt("Masukkan API_TOKEN VPS");
-if(token) localStorage.setItem("waCenterToken",token);
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const state = { devices: [], currentDevice: null, currentChat: null, chats: [], method:'pair', activePairId:null, ws:null, wsTimer:null, loading:new Set(), read:true };
+  let token = localStorage.getItem('waCenterToken') || '';
 
-async function api(url,opts={}){
-  opts.headers={...(opts.headers||{}),Authorization:"Bearer "+token};
-  const r=await fetch(url,opts);
-  const j=await r.json().catch(()=>({}));
-  if(!r.ok) throw new Error(j.error||r.statusText);
-  return j;
-}
-function log(x){
-  const el=document.getElementById("log");
-  el.textContent=new Date().toLocaleTimeString()+" "+JSON.stringify(x)+"\n"+el.textContent;
-}
-async function load(){
-  try{
-    const ds=await api("/api/devices");
-    document.getElementById("status").textContent=ds.length+" device";
-    document.getElementById("devices").innerHTML=ds.map(d=>`
-      <div class="card">
-        <h3>${esc(d.name)}</h3>
-        <p>${esc(d.number||"-")}</p>
-        <p class="${d.status==="online"?"online":"offline"}">● ${esc(d.runtime||d.status)}</p>
-        <div class="actions">
-          <button onclick="wake('${escAttr(d.id)}')">Buka</button>
-          <button onclick="edit('${escAttr(d.id)}')">✎</button>
-          <button onclick="del('${escAttr(d.id)}')">🗑</button>
-        </div>
-      </div>`).join("");
-    const st=await api("/api/storage");
-    document.getElementById("storage").innerHTML=
-      `<small>${fmt(st.totalBytes)} total data WA Center</small><br>
-       <small>Session ${fmt(st.sessionBytes)} • Media ${fmt(st.mediaBytes)} • Messages ${fmt(st.messagesBytes)}</small>`;
-  }catch(e){log({error:e.message})}
-}
-async function wake(id){
-  try{const r=await api("/api/devices/"+id+"/wake",{method:"POST"});log(r);await load()}catch(e){alert(e.message)}
-}
-async function del(id){
-  if(!confirm("Hapus device dan session WhatsApp-nya?"))return;
-  try{await api("/api/devices/"+id,{method:"DELETE"});await load()}catch(e){alert(e.message)}
-}
-async function edit(id){
-  const name=prompt("Nama baru?");
-  if(!name)return;
-  try{await api("/api/devices/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});await load()}catch(e){alert(e.message)}
-}
-function addDevice(){document.getElementById("pair").classList.add("show")}
-function closePair(){document.getElementById("pair").classList.remove("show")}
-async function createDeviceOnly(){
-  try{
-    const name=document.getElementById("name").value.trim();
-    const number=document.getElementById("number").value.trim();
-    const d=await api("/api/devices",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,number})});
-    const r=await api("/api/devices/"+d.id+"/wake",{method:"POST"});
-    document.getElementById("pairResult").innerHTML = r.qr
-      ? `<b>QR siap</b><br><img src="${r.qr}" style="width:260px;max-width:100%;margin-top:10px;border-radius:16px;background:#fff;padding:10px">`
-      : `<pre>${esc(JSON.stringify(r,null,2))}</pre>`;
-    await load();
-  }catch(e){alert(e.message)}
-}
-async function createAndPair(){
-  try{
-    const name=document.getElementById("name").value.trim();
-    const number=document.getElementById("number").value.trim();
-    const custom=document.getElementById("custom").value.trim();
-    const d=await api("/api/devices",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,number})});
-    const r=await api("/api/devices/"+d.id+"/pairing-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone:number,customCode:custom||null})});
-    document.getElementById("pairResult").innerHTML = r.alreadyRegistered
-      ? "<b>Device sudah terdaftar.</b>"
-      : `<div style="font-size:28px;font-weight:800;letter-spacing:3px">${esc(r.code||"-")}</div><small>Masukkan kode ini di WhatsApp → Perangkat tertaut → Tautkan dengan nomor telepon.</small>`;
-    await load();
-  }catch(e){
-    document.getElementById("pairResult").innerHTML=`<div style="color:#ef5b6b;font-weight:700">Gagal: ${esc(e.message)}</div><small>Coba lagi setelah socket masuk status connecting. Jangan menekan pairing berkali-kali.</small>`;
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmt = n => { n=Number(n)||0; if(n<1024)return n+' B'; if(n<1024**2)return (n/1024).toFixed(1)+' KB'; if(n<1024**3)return (n/1024**2).toFixed(1)+' MB'; return (n/1024**3).toFixed(2)+' GB'; };
+  const initials = s => (String(s||'W').trim().charAt(0)||'W').toUpperCase();
+  const phoneJid = p => { const n=String(p||'').replace(/\D/g,''); return n ? n+'@s.whatsapp.net' : ''; };
+  const phoneDisplay = p => { const n=String(p||''); return n || 'Nomor belum diisi'; };
+  function toast(msg){ const el=$('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove('show'),2400); }
+  function setLoading(el,on,label){ if(!el)return; if(on){ if(!el.dataset.oldText)el.dataset.oldText=el.textContent; el.disabled=true; el.innerHTML='<span class="loading"><i class="spinner"></i>'+esc(label||'Memproses…')+'</span>'; } else { el.disabled=false; if(el.dataset.oldText)el.textContent=el.dataset.oldText; delete el.dataset.oldText; } }
+  function showScreen(id){ document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active')); $(id).classList.add('active'); window.scrollTo(0,0); }
+  function showModal(id){ $(id).classList.add('show'); }
+  function hideModal(id){ $(id).classList.remove('show'); }
+  function openDrawer(){ $('drawerOverlay').classList.add('show'); $('drawer').classList.add('show'); }
+  function closeDrawer(){ $('drawerOverlay').classList.remove('show'); $('drawer').classList.remove('show'); }
+  async function api(url, opts={}){
+    if(!token) throw new Error('API token belum diisi');
+    const headers={...(opts.headers||{}),Authorization:'Bearer '+token};
+    if(opts.body && !(opts.body instanceof FormData) && !headers['Content-Type']) headers['Content-Type']='application/json';
+    let r;
+    try { r=await fetch(url,{...opts,headers,cache:'no-store'}); } catch { throw new Error('Tidak bisa terhubung ke server'); }
+    const text=await r.text(); let data={}; try{data=text?JSON.parse(text):{}}catch{data={error:text||r.statusText}};
+    if(r.status===401){ localStorage.removeItem('waCenterToken'); token=''; showModal('authModal'); throw new Error('API token tidak valid'); }
+    if(!r.ok) throw new Error(data.error||r.statusText||'Request gagal');
+    return data;
   }
-}
-function toggleDrawer(){document.getElementById("drawer").classList.toggle("show")}
-function openSettings(){toggleDrawer();alert("Settings API sudah tersedia; UI demo dapat dikembangkan dari endpoint ini.")}
-async function showStorage(){
-  toggleDrawer();
-  try{
-    const st=await api("/api/storage");
-    const rows=st.files.map(f=>`<div class="row"><input type="checkbox" class="filePick" value="${escAttr(f.path)}" style="width:auto"><div style="flex:1"><b>${esc(f.path)}</b><br><small>${fmt(f.bytes)}</small></div></div>`).join("");
-    document.getElementById("storage").innerHTML=`<div><small>${fmt(st.totalBytes)} total • Session ${fmt(st.sessionBytes)} • Media ${fmt(st.mediaBytes)} • Messages ${fmt(st.messagesBytes)}</small></div><div style="margin:10px 0"><button onclick="selectAllFiles(true)">Pilih semua</button> <button onclick="selectAllFiles(false)">Kosongkan</button> <button onclick="deleteSelectedFiles()">Hapus terpilih</button> <button onclick="cleanupMedia()">Bersihkan media</button></div>${rows || '<small>Tidak ada file.</small>'}`;
-  }catch(e){alert(e.message)}
-}
-function selectAllFiles(v){document.querySelectorAll('.filePick').forEach(x=>x.checked=v)}
-async function deleteSelectedFiles(){
-  const paths=[...document.querySelectorAll('.filePick:checked')].map(x=>x.value);
-  if(!paths.length)return alert('Pilih file dulu.');
-  if(!confirm(`Hapus ${paths.length} file? Session WhatsApp tetap dilindungi.`))return;
-  try{await api('/api/storage',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({paths})});showStorage()}catch(e){alert(e.message)}
-}
-async function cleanupMedia(){if(!confirm('Bersihkan semua media sementara?'))return;try{await api('/api/storage/cleanup-media',{method:'POST'});showStorage()}catch(e){alert(e.message)}}
-function toggleTheme(){document.body.classList.toggle("dark");localStorage.setItem("dark",document.body.classList.contains("dark"))}
-function fmt(n){n=Number(n)||0;if(n<1024)return n+" B";if(n<1024**2)return (n/1024).toFixed(1)+" KB";if(n<1024**3)return (n/1024**2).toFixed(1)+" MB";return (n/1024**3).toFixed(2)+" GB"}
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
-function escAttr(s){return esc(s).replace(/"/g,"&quot;")}
-if(localStorage.getItem("dark")==="true")document.body.classList.add("dark");
-let deferredInstallPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;document.getElementById('installBox').style.display='block'});
-async function installPWA(){if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;document.getElementById('installBox').style.display='none'}
-window.addEventListener('online',()=>document.getElementById('offline').style.display='none');
-window.addEventListener('offline',()=>document.getElementById('offline').style.display='block');
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(e=>log({sw:e.message}))}
-const wsProto=location.protocol==="https:"?"wss":"ws";
-const ws=new WebSocket(wsProto+"://"+location.host+"/ws");
-ws.onmessage=e=>{const x=JSON.parse(e.data);log(x);if(["device.update","device.open","device.close","device.sleep","device.deleted","message","history"].includes(x.type))load()};
-load();
+  async function validateToken(){ if(!token){showModal('authModal');return false;} try{await api('/api/devices'); $('apiState').textContent='Terhubung'; $('apiDot').className='statusdot'; return true;}catch(e){ $('apiState').textContent=e.message; $('apiDot').className='statusdot offline'; if(!token)showModal('authModal'); return false; } }
+
+  function renderDevices(){
+    const grid=$('deviceGrid'); if(!state.devices.length){grid.innerHTML='<button class="device-card add-card" data-action="add-device"><div class="plus">＋</div><strong>Tambah WhatsApp pertama</strong><span class="modal-desc">Pairing Code atau QR</span></button>';}
+    else grid.innerHTML=state.devices.map(d=>`<div class="device-card" data-device="${esc(d.id)}"><button class="card-menu" data-action="device-menu" data-id="${esc(d.id)}">⋮</button><div class="device-head"><div class="avatar">${esc(initials(d.name))}</div><span class="statusdot ${d.status==='connecting'||d.runtime==='connecting'?'connecting':(d.status==='online'?'':'offline')}"></span></div><div class="device-name">${esc(d.name||d.id)}</div><div class="device-number">${esc(phoneDisplay(d.number))}</div><div class="device-status ${esc(d.status||d.runtime||'offline')}">● ${esc(labelStatus(d.status||d.runtime))}</div></div>`).join('')+'<button class="device-card add-card" data-action="add-device"><div class="plus">＋</div><strong>Tambah WhatsApp</strong><span class="modal-desc">Tambah akun baru</span></button>';
+    $('countDevices').textContent=state.devices.length; $('countOnline').textContent=state.devices.filter(d=>d.status==='online').length;
+  }
+  function labelStatus(s){ return ({online:'Online',offline:'Offline',connecting:'Menghubungkan',pairing:'Menunggu pairing',sleeping:'Sleep',logged_out:'Logout'}[s]||'Offline'); }
+  async function loadDevices(silent=false){ try{const ds=await api('/api/devices'); state.devices=Array.isArray(ds)?ds:[]; renderDevices(); $('systemStatus').textContent=`${state.devices.filter(d=>d.status==='online').length} online • realtime aktif`; if(!silent) toast('Device diperbarui');}catch(e){$('systemStatus').textContent=e.message; if(!silent)toast(e.message);} }
+  async function loadStorage(){ try{const s=await api('/api/storage'); $('storageTotal').textContent=fmt(s.totalBytes); $('storageSession').textContent=fmt(s.sessionBytes); $('storageMedia').textContent=fmt(s.mediaBytes); $('storageMessages').textContent=fmt(s.messagesBytes); const pct=Math.min(100,Number(s.totalBytes)/Math.max(1,Number(s.totalBytes)+50*1024**3)*100); $('storageProgress').style.width=pct+'%'; return s;}catch(e){toast(e.message);return null;} }
+  async function refresh(){ const btn=document.querySelector('[data-action="refresh"]'); setLoading(btn,true,''); await Promise.all([loadDevices(true),loadStorage()]); setLoading(btn,false); toast('Data diperbarui'); }
+
+  function openPair(){ $('newName').value=''; $('newNumber').value=''; $('customCode').value=''; $('pairResult').innerHTML='<span class="modal-desc">Belum ada kode.</span>'; state.method='pair'; document.querySelectorAll('[data-method]').forEach(b=>b.classList.toggle('active',b.dataset.method==='pair')); showModal('pairModal'); }
+  async function startPair(btn){
+    const name=$('newName').value.trim(); const number=$('newNumber').value.trim(); const custom=$('customCode').value.trim().toUpperCase();
+    if(!name)return toast('Nama device wajib diisi'); if(!/^\d{8,15}$/.test(number.replace(/\D/g,'')))return toast('Nomor tidak valid. Contoh: 62812xxxxxxx'); if(custom && custom.length!==8)return toast('Custom code harus 8 karakter');
+    setLoading(btn,true,'Membuat device…');
+    try{
+      const d=await api('/api/devices',{method:'POST',body:JSON.stringify({name,number})}); state.activePairId=d.id;
+      if(state.method==='qr'){
+        $('pairResult').innerHTML='<span class="loading"><i class="spinner"></i> Menunggu QR dari WhatsApp…</span>';
+        const r=await api(`/api/devices/${encodeURIComponent(d.id)}/wake`,{method:'POST'}); if(r.qr)showQr(r.qr); else toast('Socket dimulai. QR akan muncul otomatis.');
+      } else {
+        $('pairResult').innerHTML='<span class="loading"><i class="spinner"></i> Meminta pairing code…</span>';
+        const r=await api(`/api/devices/${encodeURIComponent(d.id)}/pairing-code`,{method:'POST',body:JSON.stringify({phone:number,customCode:custom||null})});
+        if(r.alreadyRegistered) $('pairResult').innerHTML='<b>Device sudah terdaftar.</b><div class="hint">Buka device dari halaman utama.</div>';
+        else $('pairResult').innerHTML=`<div class="modal-desc">PAIRING CODE</div><div class="pair-code">${esc(r.code||'-')}</div><div class="hint">WhatsApp → Perangkat tertaut → Tautkan dengan nomor telepon.</div>`;
+      }
+      await loadDevices(true);
+    }catch(e){$('pairResult').innerHTML=`<div class="danger-text"><b>Gagal</b><div class="hint">${esc(e.message)}</div></div>`;}finally{setLoading(btn,false);}
+  }
+  function showQr(src){ $('pairResult').innerHTML=`<div class="modal-desc">SCAN QR DENGAN WHATSAPP</div><img class="qr" src="${esc(src)}" alt="QR pairing"><div class="hint" style="margin-top:7px">QR akan berubah otomatis jika WhatsApp meminta kode baru.</div>`; }
+
+  async function openDevice(id){ const d=state.devices.find(x=>x.id===id); if(!d)return; state.currentDevice=d; $('deviceAvatar').textContent=initials(d.name); $('deviceTitle').textContent=d.name||d.id; $('deviceStatus').textContent=labelStatus(d.status||d.runtime); showScreen('deviceScreen'); await loadChats(); }
+  async function loadChats(){
+    const d=state.currentDevice; if(!d)return; $('chatList').innerHTML='<div class="empty"><span class="loading"><i class="spinner"></i> Memuat chat…</span></div>';
+    try{const messages=await api(`/api/devices/${encodeURIComponent(d.id)}/messages`); const groups=new Map(); for(const m of messages){if(!m.remoteJid||m.remoteJid==='status@broadcast')continue; const g=groups.get(m.remoteJid)||{jid:m.remoteJid,name:m.pushName||m.remoteJid.split('@')[0],messages:[]}; g.messages.push(m); if(m.pushName)g.name=m.pushName; groups.set(m.remoteJid,g);} state.chats=[...groups.values()].sort((a,b)=>(b.messages.at(-1)?.timestamp||0)-(a.messages.at(-1)?.timestamp||0)); renderChats();}catch(e){$('chatList').innerHTML=`<div class="empty">${esc(e.message)}</div>`;}
+  }
+  function renderChats(){ const q=$('chatSearch').value.trim().toLowerCase(); const rows=state.chats.filter(c=>`${c.name} ${c.jid}`.toLowerCase().includes(q)); $('chatCount').textContent=rows.length+' chat'; $('chatList').innerHTML=rows.length?rows.map(c=>{const m=c.messages.at(-1);return `<button class="chat-row" data-action="open-chat" data-jid="${esc(c.jid)}"><div class="chat-avatar">${esc(initials(c.name))}</div><div class="chat-main"><div class="chat-top"><span class="chat-name">${esc(c.name||c.jid.split('@')[0])}</span><span class="chat-time">${m?time(m.timestamp):''}</span></div><div class="chat-preview">${esc(m?.text||('['+String(m?.type||'pesan')+']'))}</div></div></button>`}).join(''):'<div class="empty">Belum ada chat tersimpan.<br><small>Pesan baru akan tampil setelah device menerima event dari WhatsApp.</small></div>'; }
+  function time(ts){try{return new Date(ts).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});}catch{return '';}}
+  async function openChat(jid){ const c=state.chats.find(x=>x.jid===jid); if(!c)return; state.currentChat=c; $('convName').textContent=c.name||jid.split('@')[0]; $('convNumber').textContent=jid.split('@')[0]; $('convAvatar').textContent=initials(c.name); showScreen('conversationScreen'); renderMessages(); }
+  function renderMessages(){const box=$('messages'); const msgs=state.currentChat?.messages||[]; box.innerHTML=msgs.length?msgs.map(m=>`<div class="bubble ${m.fromMe?'out':'in'}">${esc(m.text||('['+m.type+']'))}<small>${time(m.timestamp)}</small></div>`).join(''):'<div class="empty">Belum ada pesan.</div>'; box.scrollTop=box.scrollHeight;}
+  async function sendMessage(){ const d=state.currentDevice,c=state.currentChat, ta=$('messageText'); const text=ta.value.trim(); if(!d||!c||!text)return; const btn=document.querySelector('[data-action="send-message"]'); setLoading(btn,true,''); try{await api(`/api/devices/${encodeURIComponent(d.id)}/send`,{method:'POST',body:JSON.stringify({jid:c.jid,text})}); ta.value=''; await loadChats(); const fresh=state.chats.find(x=>x.jid===c.jid); if(fresh){state.currentChat=fresh;renderMessages();} }catch(e){toast(e.message);}finally{setLoading(btn,false);}}
+
+  function openDeviceMenu(id){ const d=state.devices.find(x=>x.id===id)||state.currentDevice; if(!d)return; state.currentDevice=d; $('menuDeviceName').textContent=d.name; showModal('deviceMenuModal'); }
+  async function wakeCurrent(){ const d=state.currentDevice;if(!d)return; const btn=document.querySelector('[data-action="wake-device"]');setLoading(btn,true,'Menghubungkan…');try{const r=await api(`/api/devices/${encodeURIComponent(d.id)}/wake`,{method:'POST'});toast(r.state==='open'?'Device online':'Socket dimulai');hideModal('deviceMenuModal');await loadDevices(true);}catch(e){toast(e.message);}finally{setLoading(btn,false);}}
+  async function sleepCurrent(){const d=state.currentDevice;if(!d)return;try{await api(`/api/devices/${encodeURIComponent(d.id)}/sleep`,{method:'POST'});hideModal('deviceMenuModal');await loadDevices(true);toast('Device di-sleep');}catch(e){toast(e.message);}}
+  function editCurrent(){const d=state.currentDevice;if(!d)return;hideModal('deviceMenuModal');$('editName').value=d.name||'';$('editNumber').value=d.number||'';showModal('editModal');}
+  async function saveEdit(){const d=state.currentDevice;if(!d)return;const name=$('editName').value.trim(),number=$('editNumber').value.trim();if(!name)return toast('Nama wajib diisi');const btn=document.querySelector('[data-action="save-edit"]');setLoading(btn,true,'Menyimpan…');try{await api(`/api/devices/${encodeURIComponent(d.id)}`,{method:'PATCH',body:JSON.stringify({name,number})});hideModal('editModal');await loadDevices(true);toast('Perubahan disimpan');}catch(e){toast(e.message);}finally{setLoading(btn,false);}}
+  async function deleteCurrent(){const d=state.currentDevice;if(!d)return;if(!confirm(`Hapus ${d.name} beserta session WhatsApp?`))return;const btn=document.querySelector('[data-action="delete-device"]');setLoading(btn,true,'Menghapus…');try{await api(`/api/devices/${encodeURIComponent(d.id)}`,{method:'DELETE'});hideModal('deviceMenuModal');state.currentDevice=null;showScreen('homeScreen');await loadDevices(true);toast('Device dihapus');}catch(e){toast(e.message);}finally{setLoading(btn,false);}}
+
+  async function openStorage(){closeDrawer();showModal('storageModal');await renderStorage();}
+  async function renderStorage(){const s=await loadStorage();if(!s)return;$('storageModalTotal').textContent=fmt(s.totalBytes);$('storageModalCount').textContent=(s.files||[]).length+' file';$('modalSession').textContent=fmt(s.sessionBytes);$('modalMedia').textContent=fmt(s.mediaBytes);$('modalMessages').textContent=fmt(s.messagesBytes);$('storageModalProgress').style.width=Math.min(100,Number(s.totalBytes)/Math.max(1,Number(s.totalBytes)+50*1024**3)*100)+'%';$('fileList').innerHTML=(s.files||[]).filter(f=>!String(f.path).startsWith('devices/')).map(f=>`<label class="file-row"><input type="checkbox" class="filePick" value="${esc(f.path)}"><div class="file-info"><b>${esc(f.path)}</b><span>${fmt(f.bytes)} • ${esc(new Date(f.modifiedAt).toLocaleString('id-ID'))}</span></div></label>`).join('')||'<div class="empty">Tidak ada file yang bisa dikelola.</div>';}
+  function selectFiles(){document.querySelectorAll('.filePick').forEach(x=>x.checked=true);}
+  async function deleteFiles(){const paths=[...document.querySelectorAll('.filePick:checked')].map(x=>x.value);if(!paths.length)return toast('Pilih file dulu');if(!confirm(`Hapus ${paths.length} file? Session WhatsApp tetap aman.`))return;try{const r=await api('/api/storage',{method:'DELETE',body:JSON.stringify({paths})});toast(`${r.deleted?.length||0} file dihapus`);await renderStorage();}catch(e){toast(e.message);}}
+  async function cleanupMedia(){if(!confirm('Hapus semua media sementara?'))return;try{const r=await api('/api/storage/cleanup-media',{method:'POST'});toast(`${r.deleted||0} file media dibersihkan`);await renderStorage();}catch(e){toast(e.message);}}
+  function toggleTheme(){const dark=!document.body.classList.contains('dark');document.body.classList.toggle('dark',dark);localStorage.setItem('waCenterDark',dark?'1':'0');$('themeText').textContent=dark?'Mode gelap aktif':'Mode terang aktif';}
+
+  function connectWS(){ if(!token)return; try{state.ws?.close();}catch{} const proto=location.protocol==='https:'?'wss':'ws'; try{const ws=new WebSocket(`${proto}://${location.host}/ws`);state.ws=ws;ws.onopen=()=>{$('apiState').textContent='Realtime terhubung';$('apiDot').className='statusdot';};ws.onmessage=e=>{try{const x=JSON.parse(e.data);if(x.type==='pairing.qr'&&x.deviceId===state.activePairId)showQr(x.qr);if(x.type==='device.update'||x.type==='device.open'||x.type==='device.close'||x.type==='device.sleep'||x.type==='device.deleted'){loadDevices(true);if(state.currentDevice?.id===x.deviceId){const d=state.devices.find(z=>z.id===x.deviceId);if(d)$('deviceStatus').textContent=labelStatus(d.status);}}if(x.type==='message'&&state.currentDevice?.id===x.deviceId){loadChats();}}catch{}};ws.onclose=()=>{ $('apiState').textContent='Realtime reconnecting…';$('apiDot').className='statusdot connecting';clearTimeout(state.wsTimer);state.wsTimer=setTimeout(connectWS,2500);};ws.onerror=()=>{};}catch{setTimeout(connectWS,2500);} }
+
+  document.addEventListener('click', async e=>{
+    const method=e.target.closest('[data-method]'); if(method){state.method=method.dataset.method;document.querySelectorAll('[data-method]').forEach(b=>b.classList.toggle('active',b===method));return;}
+    const btn=e.target.closest('[data-action]'); if(!btn)return; const a=btn.dataset.action; const id=btn.dataset.id || btn.closest('[data-device]')?.dataset.device;
+    try{
+      if(a==='open-menu')openDrawer(); else if(a==='close-menu')closeDrawer(); else if(a==='add-device'){closeDrawer();openPair();} else if(a==='close-pair')hideModal('pairModal'); else if(a==='start-pair')await startPair(btn); else if(a==='refresh')await refresh(); else if(a==='storage')await openStorage(); else if(a==='close-storage')hideModal('storageModal'); else if(a==='select-files')selectFiles(); else if(a==='delete-files')await deleteFiles(); else if(a==='cleanup-media')await cleanupMedia(); else if(a==='toggle-theme')toggleTheme(); else if(a==='toggle-read'){state.read=!state.read;btn.classList.toggle('on',state.read);localStorage.setItem('waCenterRead',state.read?'1':'0');toast(state.read?'Read receipts UI aktif':'Read receipts UI nonaktif');} else if(a==='manage-devices'){closeDrawer();toast('Gunakan ⋮ pada device untuk mengelola');} else if(a==='home'){state.currentDevice=null;showScreen('homeScreen');await loadDevices(true);} else if(a==='device-menu')openDeviceMenu(id); else if(a==='close-device-menu')hideModal('deviceMenuModal'); else if(a==='open-device'){hideModal('deviceMenuModal');await openDevice(state.currentDevice?.id);} else if(a==='wake-device')await wakeCurrent(); else if(a==='sleep-device')await sleepCurrent(); else if(a==='edit-device')editCurrent(); else if(a==='delete-device')await deleteCurrent(); else if(a==='close-edit')hideModal('editModal'); else if(a==='save-edit')await saveEdit(); else if(a==='open-chat')await openChat(btn.dataset.jid); else if(a==='back-chats'){showScreen('deviceScreen');} else if(a==='send-message')await sendMessage(); else if(a==='save-token'){const input=$('tokenInput');if(!input.value.trim())return toast('Token wajib diisi');token=input.value.trim();localStorage.setItem('waCenterToken',token);hideModal('authModal');if(await validateToken()){connectWS();await Promise.all([loadDevices(true),loadStorage()]);toast('Berhasil terhubung');}} 
+    }catch(err){toast(err.message||'Terjadi kesalahan');}
+  });
+  $('drawerOverlay').addEventListener('click',closeDrawer); $('chatSearch').addEventListener('input',renderChats); $('messageText').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+  window.addEventListener('online',()=>{$('offlineBar').classList.remove('show');if(token)connectWS();}); window.addEventListener('offline',()=>$('offlineBar').classList.add('show'));
+  document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show');}));
+  if(localStorage.getItem('waCenterDark')==='1')document.body.classList.add('dark'); $('themeText').textContent=document.body.classList.contains('dark')?'Mode gelap aktif':'Mode terang aktif';
+  state.read=localStorage.getItem('waCenterRead')!=='0'; $('readSwitch').classList.toggle('on',state.read);
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js?v=3').catch(()=>{});
+  validateToken().then(ok=>{if(ok){connectWS();loadDevices(true);loadStorage();}});
+})();
 </script>
 </body>
 </html>

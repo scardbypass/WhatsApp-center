@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 npm install
-test -f .env || cp .env.example .env
-echo "Edit .env, then run: npm start"
+node --check server.js
+pm2 startOrRestart ecosystem.config.cjs --update-env
+pm2 save

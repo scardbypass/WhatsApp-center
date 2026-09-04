@@ -1,6 +1,5 @@
 node_modules/
 .env
-data/devices/*/auth/
-data/media-tmp/*
-data/messages/*
+data/
 *.log
+.DS_Store
