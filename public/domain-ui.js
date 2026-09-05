@@ -2,14 +2,17 @@
   'use strict';
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const api = async (url, options = {}) => {
-    const token = localStorage.getItem('waCenterToken') || '';
-    const r = await fetch(url, { ...options, cache: 'no-store', headers: { ...(options.headers || {}), Authorization: 'Bearer ' + token } });
+    const token = localStorage.getItem('waCenterToken') || localStorage.getItem('token') || '';
+    const headers = { ...(options.headers || {}) };
+    if (token) headers.Authorization = 'Bearer ' + token;
+    const r = await fetch(url, { ...options, cache: 'no-store', headers });
     const text = await r.text(); let data = {};
     try { data = text ? JSON.parse(text) : {}; } catch { data = { error: text || r.statusText }; }
     if (!r.ok) throw new Error(data.error || 'Request gagal');
     return data;
   };
   const toast = msg => { const el = document.getElementById('toast'); if (!el) return; el.textContent = msg; el.classList.add('show'); clearTimeout(window.__domainToast); window.__domainToast = setTimeout(() => el.classList.remove('show'), 2600); };
+
   function openDomain() {
     let modal = document.getElementById('domainModal');
     if (!modal) {
@@ -53,10 +56,26 @@
     box.innerHTML = `<div class="domain-result-head"><b>Konfigurasi selesai</b><span>${esc(d.proxied === false ? 'DNS Only' : 'Cloudflare Proxy')}</span></div><div class="domain-url">https://${esc(d.hostname || 'wa.example.com')}</div><div class="domain-info"><div><span>DNS</span><b>${esc(d.dnsContent || d.originIp || '')}</b></div><div><span>PORT</span><b>${esc(d.originPort || 31109)}</b></div><div><span>RULE</span><b>${d.originRuleId ? 'Origin Port ✓' : 'Belum dibuat'}</b></div></div><div class="domain-command"><small>Jika tidak memakai Cloudflare Origin Rules, gunakan reverse proxy di VPS:</small><code>${esc(command)}</code><button class="btn" id="copyDomainCmd">Salin</button></div>`;
     document.getElementById('copyDomainCmd').onclick = async () => { try { await navigator.clipboard.writeText(command); toast('Command disalin'); } catch { toast(command); } };
   }
+
   function injectMenu() {
-    const list = document.querySelector('.menu-list'); if (!list || document.getElementById('domainMenuItem')) return;
-    const item = document.createElement('button'); item.className = 'menu-item'; item.id = 'domainMenuItem'; item.innerHTML = '<div class="menu-ico">⌁</div><div class="menu-info"><b>Custom Domain</b><span>Cloudflare DNS + Origin Port</span></div><div class="arrow">›</div>'; item.onclick = openDomain; list.appendChild(item);
+    if (document.getElementById('domainMenuItem')) return true;
+    const lists = [...document.querySelectorAll('.menu-list')];
+    let list = lists.find(el => /Mode Tampilan|Penyimpanan VPS|Kelola Device/i.test(el.innerText || '')) || lists[0];
+    if (!list) return false;
+    const item = document.createElement('button'); item.className = 'menu-item'; item.id = 'domainMenuItem'; item.type = 'button';
+    item.innerHTML = '<div class="menu-ico">🌐</div><div class="menu-info"><b>Custom Domain</b><span>Cloudflare DNS + HTTPS + Port 31109</span></div><div class="arrow">›</div>';
+    item.onclick = openDomain;
+    const anchor = [...list.querySelectorAll('.menu-item')].find(el => /Mode Tampilan/i.test(el.innerText || ''));
+    if (anchor) anchor.insertAdjacentElement('afterend', item); else list.appendChild(item);
+    return true;
   }
-  const observer = new MutationObserver(injectMenu);
-  window.addEventListener('DOMContentLoaded', () => { injectMenu(); observer.observe(document.body, { childList: true, subtree: true }); });
+
+  function boot() {
+    injectMenu();
+    let tries = 0;
+    const timer = setInterval(() => { if (injectMenu() || ++tries > 30) clearInterval(timer); }, 250);
+    const observer = new MutationObserver(() => injectMenu());
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true }); else boot();
 })();
