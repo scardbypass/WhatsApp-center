@@ -1,11 +1,11 @@
 {
   "name": "wa-center",
-  "version": "1.0.0-v9.2",
+  "version": "1.0.0-v9.4",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node domain-patch.js",
-    "dev": "node domain-patch.js"
+    "start": "node boot-patch.js",
+    "dev": "node boot-patch.js"
   },
   "engines": {
     "node": ">=20"
