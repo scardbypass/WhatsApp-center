@@ -42,15 +42,15 @@
     const s = String(jid || '');
     return s.endsWith('@g.us') ? '' : s.split('@')[0].split(':')[0];
   }
-  function displayForJid(jid, fallback) {
-    return contactCache.get(jid) || numberFromJid(jid) || (String(fallback || '').trim() || 'Kontak');
+  function displayForJid(jid) {
+    return contactCache.get(jid) || numberFromJid(jid) || 'Grup';
   }
   function repairChatRows() {
     document.querySelectorAll('.chat-row[data-jid]').forEach(row => {
       const jid = row.dataset.jid;
       const nameEl = row.querySelector('.chat-name');
       if (!nameEl) return;
-      const corrected = displayForJid(jid, nameEl.textContent);
+      const corrected = displayForJid(jid);
       if (nameEl.textContent !== corrected) nameEl.textContent = corrected;
       const avatar = row.querySelector('.chat-avatar');
       if (avatar) avatar.textContent = corrected.trim().charAt(0).toUpperCase();
