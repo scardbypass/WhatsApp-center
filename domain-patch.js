@@ -41,9 +41,9 @@ async function findCloudflareZone(hostname) {
 }
 async function ensureOriginRule(zoneId, hostname, port) {
   const endpoint = \`https://api.cloudflare.com/client/v4/zones/\${zoneId}/rulesets/phases/http_request_origin/entrypoint\`;
-  let current = { rules: [] };
+  let current = { result: { rules: [] } };
   try { current = await cfRequest(endpoint); } catch (err) {
-    if (!String(err.message).includes("not found")) throw err;
+    if (!/404|not found/i.test(String(err.message))) throw err;
   }
   const rules = Array.isArray(current.result?.rules) ? current.result.rules.filter(r => r.ref !== "wa_center_custom_domain") : [];
   rules.push({ ref: "wa_center_custom_domain", expression: \`http.host eq "\${hostname}"\`, description: \`WA Center custom domain \${hostname}\`, action: "route", action_parameters: { origin: { port } }, enabled: true });
