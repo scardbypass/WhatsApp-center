@@ -1,7 +1,12 @@
 (() => {
   'use strict';
-  // The real API token stays only in VPS .env. The browser receives an HttpOnly session cookie.
-  try { localStorage.setItem('waCenterToken', '__env_session__'); } catch {}
+  const SESSION_TOKEN = '__env_session__';
+
+  // Ask the same-origin server to issue the HttpOnly session derived from API_TOKEN in .env.
+  // The real API token is never exposed to JavaScript, localStorage, or the UI.
+  fetch('/api/session', { method: 'GET', credentials: 'same-origin', cache: 'no-store' })
+    .then(() => { try { localStorage.setItem('waCenterToken', SESSION_TOKEN); } catch {} })
+    .catch(() => {});
 
   const hideLegacyAuth = () => {
     const nodes = [...document.querySelectorAll('body *')];
