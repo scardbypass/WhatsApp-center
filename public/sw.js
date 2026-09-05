@@ -1,6 +1,7 @@
-const CACHE = 'wa-center-v9';
-const SHELL = ['/index.html','/manifest.webmanifest','/icons/icon-192.png','/icons/icon-512.png','/modern.css'];
+const CACHE = 'wa-center-v9.1';
+const SHELL = ['/index.html','/manifest.webmanifest','/icons/icon-192.png','/icons/icon-512.png','/modern.css','/contact-fix.js'];
 const UI_CSS = '/modern.css';
+const UI_JS = '/contact-fix.js';
 
 self.addEventListener('install', event => event.waitUntil(
   caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())
@@ -12,9 +13,9 @@ self.addEventListener('activate', event => event.waitUntil(
 async function modernizeHtml(response) {
   if (!response || !response.ok) return response;
   const html = await response.text();
-  const marker = 'wa-center-v9-ui';
+  const marker = 'wa-center-v9.1-ui';
   if (html.includes(marker)) return new Response(html, {headers: response.headers, status: response.status});
-  const injection = `<!-- ${marker} --><link rel="stylesheet" href="${UI_CSS}?v=9"><meta name="theme-color" content="#5f55f6"><meta name="apple-mobile-web-app-title" content="WA Center">`;
+  const injection = `<!-- ${marker} --><link rel="stylesheet" href="${UI_CSS}?v=9.1"><script src="${UI_JS}?v=9.1"></script><meta name="theme-color" content="#5f55f6"><meta name="apple-mobile-web-app-title" content="WA Center">`;
   const upgraded = html.replace('</head>', `${injection}</head>`);
   const headers = new Headers(response.headers);
   headers.set('content-type','text/html; charset=utf-8');
